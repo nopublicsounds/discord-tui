@@ -188,6 +188,48 @@ const commands: Record<string, CommandHandler> = {
 		}
 
 		screen.render();
+	},
+
+	dmopen: async(args, { client, chatBox, screen, setCurrentDMChannel }) => {
+		if(args.length < 1){
+			chatBox.log(chalk.yellow('Usage: /dmopen <username>'));
+			chatBox.log(chalk.yellow('Example: /dmopen Alice'));
+			screen.render();
+			return;
+		}
+
+		const targetUsername = args[0];
+		const targetUser = await findUserByUsername(client, targetUsername as string, chatBox, screen);
+		if(!targetUser){
+			return;
+		}
+
+		try{
+			const dmChannel = await targetUser.createDM();
+			dmChannelCache.set(targetUsername as string, dmChannel);
+			setCurrentDMChannel?.(dmChannel);
+			chatBox.log(chalk.green(`✓ DM channel opened with ${chalk.cyan(targetUser.username)}`));
+		}
+		catch(error){
+			 chatBox.log(chalk.red(`Failed to open DM with ${targetUsername}: ${(error as Error).message}`));
+		}
+
+		screen.render();
+	},
+
+	dms: (args, { chatBox, screen }) => {
+		if(dmChannelCache.size === 0){
+			chatBox.log(chalk.yellow('No open DM channels'));
+			screen.render();
+			return;
+		}
+
+		chatBox.log(chalk.yellow('--- Open DM Channels ---'));
+		dmChannelCache.forEach((channel, username) => {
+			chatBox.log(chalk.cyan(username) + ' (ID: ' + channel.id + ')');
+		});
+		chatBox.log('');
+		screen.render();
 	}
 };
 
