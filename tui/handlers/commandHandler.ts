@@ -1,8 +1,7 @@
 import chalk from 'chalk';
-import { Client, ChannelType, TextChannel } from 'discord.js';
+import { Client, TextChannel, DMChannel, User } from 'discord.js';
 import type { Widgets } from 'blessed';
 import { formatTime } from '../utils/formatters.js';
-import { spawn } from 'child_process';
 
 interface CommandContext{
 	client: Client;
@@ -13,9 +12,12 @@ interface CommandContext{
 	channelMap: Map<number, TextChannel>;
 	getCurrentChannel: () => TextChannel | null;
 	setCurrentChannel: (channel: TextChannel) => void;
+	currentDMChannel?: DMChannel | null;
+  	setCurrentDMChannel?: (channel: DMChannel | null) => void;
 }
 
 type CommandHandler = (args: string[], ctx: CommandContext) => Promise<void> | void;
+const dmChannelCache = new Map<string, DMChannel>();
 
 const commands: Record<string, CommandHandler> = {
 	help: (args, { chatBox }) => {
@@ -25,6 +27,9 @@ const commands: Record<string, CommandHandler> = {
 		chatBox.log(chalk.cyan('/members') + ' - show list of members');
 		chatBox.log(chalk.cyan('/clear') + ' - clear chatbox');
 		chatBox.log(chalk.cyan('/sh') + ' - open shell');
+		chatBox.log(chalk.cyan('/dm <username> <message>') + ' - send a DM to a user');
+    	chatBox.log(chalk.cyan('/dmopen <username>') + ' - open DM conversation with a user');
+    	chatBox.log(chalk.cyan('/dms') + ' - list open DM channels');
 		chatBox.log(chalk.cyan('/quit') + ' - exit');
 		chatBox.log('');
 	},
@@ -152,6 +157,20 @@ const commands: Record<string, CommandHandler> = {
 		
 		screen.enter();
 		screen.render();
+	},
+
+	dm: async(args, { client, chatBox, screen}) => {
+		if(args.length < 2){
+			chatBox.log(chalk.yellow('Usage: /dm <username> <message>'));
+			chatBox.log(chalk.yellow('Example: /dm Alice hello there!'));
+			screen.render();
+			return;
+		}
+
+		const targetUsername = args[0];
+		const messageContent = args.slice(1).join(' ');
+
+		
 	}
 };
 
@@ -171,5 +190,36 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
 
 	await handler(args, ctx);
 	return true;
+}
+
+async function findUserByUsername(client: Client, username: string, chatBox: Widgets.Log, screen: Widgets.Screen): Promise<User | null>{
+	const cached = dmChannelCache.get(username);
+	if(cached?.recipient){
+		return cached.recipient;
+	}
+
+	for(const guild of client.guilds.cache.values()){
+		const member = guild.members.cache.find(m => m.user.username === username);
+		if(member){
+			return member.user;
+		}
+	}
+
+	for(const guild of client.guilds.cache.values()){
+		try{
+			const results = await guild.members.search({ query: username, limit: 5});
+			const match = results.find(m => m.user.username === username);
+			if(match){
+				return match.user;
+			}
+		}
+		catch{
+
+		}
+	}
+
+	chatBox.log(chalk.red(`User not found: ${username}`));
+	screen.render();
+  	return null;
 }
 
