@@ -1,6 +1,7 @@
 # Discord in Terminal
 > Building
-![Discord-TUI](./public/main.jpg)
+![Discord-TUI](./public/1.png)
+![Discord-TUI](./public/2.png)
 
 ## Setup
 
@@ -33,5 +34,3 @@ npm run setup
 ```bash
 npm run dev
 ```
-## dev note
-improving to TUI from CLI
