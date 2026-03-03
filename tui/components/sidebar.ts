@@ -22,7 +22,8 @@ export function createSidebar(screen: blessed.Widgets.Screen){
 			}
 		},
 		label: 'Servers & Channels',
-		keys: true,
+
+		keys: false,
 		vi: true,
 		mouse: true,
 		tags: true,

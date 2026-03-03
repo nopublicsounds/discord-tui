@@ -82,25 +82,38 @@ client.once(Events.ClientReady, (readyClient) => {
 	});
 });
 
-sidebar.on('select', async (item, index) => {
-	const channel = channelMap.get(index);
-
-	if(!channel){
-		const sortedIndices = Array.from(channelMap.keys()).sort((a, b) => a - b);
-		const nextIndex = sortedIndices.find(i => i > index) ?? sortedIndices[0];
-
-		if(nextIndex !== undefined){
-			sidebar.select(nextIndex);
-		}
-
-		screen.render();
-		return;
+sidebar.key(['down'], () => {
+	const totalItems = sidebar.items.length;
+	const currIndex = sidebar.selected;
+	let nextIndex = (currIndex + 1) % totalItems;
+	while(!channelMap.has(nextIndex) && nextIndex !== currIndex){
+		nextIndex = (nextIndex + 1) % totalItems;
 	}
+
+	sidebar.select(nextIndex);
+	screen.render();
+});
+
+sidebar.key(['up'], () => {
+	const totalItems = sidebar.items.length;
+	const currIndex = sidebar.selected;
+	let prevIndex = (currIndex - 1 + totalItems) % totalItems;
+	while(!channelMap.has(prevIndex) && prevIndex !== currIndex){
+		prevIndex = (prevIndex - 1 + totalItems) % totalItems;
+	}
+
+	sidebar.select(prevIndex);
+	screen.render();
+});
+
+sidebar.key(['enter'], async () => {
+	const idx = sidebar.selected;
+	const channel = channelMap.get(idx);
+	if(!channel) return; 
 
 	currentChannel = channel;
 	await handleChannelSelect(channel, chatBox, inputBox, screen);
 });
-
 
 chatBox.focus();
 screen.render();
