@@ -7,7 +7,7 @@ import { createSidebar } from './components/sidebar.js';
 import { createChatBox } from './components/chatbox.js';
 import { createInputBox } from './components/inputbox.js';
 import { LOGO, GUIDE } from './components/logo.js';
-import { setupKeyBindings } from './handlers/keyBindings.js';
+import { setupKeyBindings } from './handlers/keyHandler.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
 import { handleChannelSelect } from './handlers/channelHandler.js';
 
@@ -37,6 +37,7 @@ inputBox.hide();
 
 let currentChannel: TextChannel | null = null;
 const channelMap = new Map<number, TextChannel>();
+let removeGuide: (() => void) | null = null;
 
 setupKeyBindings(screen, sidebar, chatBox, inputBox);
 setupMessageHandlers(client, chatBox, inputBox, sidebar, screen, channelMap, () => currentChannel, (channel) => { currentChannel = channel; });
@@ -117,11 +118,12 @@ client.once(Events.ClientReady, (readyClient) => {
 			content: chalk.hex('#99AAB5')(GUIDE),
 		});
 
-		const removeGuide = () => {
+		removeGuide = () => {
 			if (!(guideBox as any).destroyed) {
 				guideBox.destroy();
 				screen.render();
 			}
+			removeGuide = null;
 		};
 		sidebar.once('select', removeGuide);
 
@@ -186,12 +188,14 @@ sidebar.key(['up'], () => {
 });
 
 sidebar.key(['enter'], async () => {
-	const idx = (sidebar as any).selected;
+	const idx = (sidebar as any).selected as number;
 	const channel = channelMap.get(idx);
-	if(!channel) return;
+	if (!channel) return;
+
+	// guideBox를 먼저 제거
+	if (removeGuide) removeGuide();
 
 	currentChannel = channel;
-
 	inputBox.setLabel(` # ${channel.name} `);
 	await handleChannelSelect(channel, chatBox, inputBox, screen);
 });

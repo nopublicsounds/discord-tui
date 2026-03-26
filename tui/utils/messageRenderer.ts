@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { Message } from 'discord.js';
 import { formatTime } from './formatters.js';
-import { displayImage } from './imageHandler.js';
+import { displayImage } from './imageRenderer.js';
 import type { Widgets } from 'blessed';
 
 export async function renderMessage(message: Message, chatBox: Widgets.Log, showImages: boolean = false): Promise<void>{
