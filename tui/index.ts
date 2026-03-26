@@ -104,7 +104,27 @@ client.once(Events.ClientReady, (readyClient) => {
 		inputBox.show();
 
 		chatBox.setContent('');
-		chatBox.log(chalk.hex('#99AAB5')(GUIDE));
+
+		const guideBox = blessed.box({
+			parent: screen,
+			top: 0,
+			left: '30%',
+			width: '70%',
+			height: '100%-3',
+			align: 'center',
+			valign: 'middle',
+			tags: false,
+			content: chalk.hex('#99AAB5')(GUIDE),
+		});
+
+		const removeGuide = () => {
+			if (!(guideBox as any).destroyed) {
+				guideBox.destroy();
+				screen.render();
+			}
+		};
+		sidebar.once('select', removeGuide);
+
 		screen.render();
 
 

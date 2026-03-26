@@ -74,7 +74,7 @@ const commands: Record<string, CommandHandler> = {
 			return;
 		}
 		
-		const { channel, index } = candidates[0];
+		const { channel, index } = candidates[0] as { channel: TextChannel, index: number };
 	
 		setCurrentChannel(channel);
 		sidebar.select(index);
@@ -86,7 +86,7 @@ const commands: Record<string, CommandHandler> = {
 			chatBox.log(chalk.green(`✓ Moved to #${channel.name}`));
 			chatBox.log('');
 
-			messages.reverse().forEach(msg => {
+			messages.reverse().forEach((msg: any) => {
 				const time = formatTime(msg.createdTimestamp);
 				chatBox.log(chalk.gray(`[${time}]`) + ' ' + chalk.cyan(msg.author.username) + ': ' + msg.content);
 			});
@@ -150,13 +150,13 @@ const commands: Record<string, CommandHandler> = {
 
 	
 	sh: (_, { screen }) => {
-		screen.leave();
+		(screen as any).leave();
 		console.log(chalk.yellow('Enter exit to return to Discord'));
 		screen.spawn(process.env.SHELL || 'bash', [], {
 			stdio: 'inherit'
 		});
 		
-		screen.enter();
+		(screen as any).enter();
 		screen.render();
 	},
 
