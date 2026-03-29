@@ -99,9 +99,6 @@ const launcher = blessed.box({
 	valign: 'middle',
 	content: [
 		coloredLogo,
-		'',
-		chalk.hex('#5865F2')('Discord in Terminal'),
-		'',
 		chalk.hex('#57F287')('[ Enter ] Start chat client'),
 		chalk.hex('#FEE75C')('[ s ] Run setup (save token)'),
 		chalk.hex('#99AAB5')('[ Ctrl+C ] Exit')
