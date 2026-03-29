@@ -114,7 +114,7 @@ const commands: Record<string, CommandHandler> = {
 		chatBox.log(chalk.yellow(`--- Members (${members.size}) ---`));
 
 		if(online.size > 0){
-			chatBox.log(chalk.green(`🟢 Online (${online.size})`));
+			chatBox.log(chalk.green(`🍀 Online (${online.size})`));
 			online.forEach(m => chatBox.log(`  ${m.user.username}`));
 		}
 		if(idle.size > 0){
