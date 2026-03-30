@@ -5,7 +5,7 @@ import { formatTime } from '../utils/formatters.js';
 import { handleChannelSelect } from './channelHandler.js';
 
 
-interface CommandContext{
+export interface CommandContext{
 	client: Client;
 	chatBox: Widgets.Log;
 	inputBox: Widgets.TextboxElement;
@@ -19,21 +19,37 @@ interface CommandContext{
 }
 
 type CommandHandler = (args: string[], ctx: CommandContext) => Promise<void> | void;
+export interface CommandDefinition {
+	name: string;
+	description: string;
+	usage: string;
+}
+
 const dmChannelCache = new Map<string, DMChannel>();
 
+const commandDefinitions: CommandDefinition[] = [
+	{ name: 'help', usage: '/help', description: 'show list of commands' },
+	{ name: 'goto', usage: '/goto <channel>', description: 'change channel' },
+	{ name: 'members', usage: '/members', description: 'show list of members' },
+	{ name: 'clear', usage: '/clear', description: 'clear chatbox' },
+	{ name: 'dmopen', usage: '/dmopen <username>', description: 'open DM conversation with a user' },
+	{ name: 'dms', usage: '/dms', description: 'list open DM channels' },
+	{ name: 'quit', usage: '/quit', description: 'exit' }
+];
+
+function renderHelp(chatBox: Widgets.Log): void {
+	chatBox.log(chalk.yellow('--- Commands ---'));
+
+	for(const command of commandDefinitions){
+		chatBox.log(chalk.cyan(command.usage) + ` - ${command.description}`);
+	}
+
+	chatBox.log('');
+}
+
 const commands: Record<string, CommandHandler> = {
-	help: (args, { chatBox }) => {
-		chatBox.log(chalk.yellow('--- Commands ---'));
-		chatBox.log(chalk.cyan('/help') + ' - show list of commands');
-		chatBox.log(chalk.cyan('/goto <channel>') + ' - change channel');
-		chatBox.log(chalk.cyan('/members') + ' - show list of members');
-		chatBox.log(chalk.cyan('/clear') + ' - clear chatbox');
-		chatBox.log(chalk.cyan('/sh') + ' - open shell');
-		chatBox.log(chalk.cyan('/dm <username> <message>') + ' - send a DM to a user');
-    	chatBox.log(chalk.cyan('/dmopen <username>') + ' - open DM conversation with a user');
-    	chatBox.log(chalk.cyan('/dms') + ' - list open DM channels');
-		chatBox.log(chalk.cyan('/quit') + ' - exit');
-		chatBox.log('');
+	help: (_, { chatBox }) => {
+		renderHelp(chatBox);
 	},
 
 	goto: async (args, { chatBox, inputBox, screen, channelMap, sidebar, setCurrentChannel }) => {
@@ -139,47 +155,6 @@ const commands: Record<string, CommandHandler> = {
 		process.exit(0);
 	},
 
-	
-	sh: (_, { screen }) => {
-		(screen as any).leave();
-		console.log(chalk.yellow('Enter exit to return to Discord'));
-		screen.spawn(process.env.SHELL || 'bash', [], {
-			stdio: 'inherit'
-		});
-		
-		(screen as any).enter();
-		screen.render();
-	},
-
-	dm: async(args, { client, chatBox, screen}) => {
-		if(args.length < 2){
-			chatBox.log(chalk.yellow('Usage: /dm <username> <message>'));
-			chatBox.log(chalk.yellow('Example: /dm Alice hello there!'));
-			screen.render();
-			return;
-		}
-
-		const targetUsername = args[0];
-		const messageContent = args.slice(1).join(' ');
-
-		const targetUser = await findUserByUsername(client, targetUsername as string, chatBox, screen);
-		if(!targetUser){
-			return;
-		}
-
-		try{
-			const dmChannel = await targetUser.createDM();
-			await dmChannel.send(messageContent);
-
-			dmChannelCache.set(targetUsername as string, dmChannel);
-			chatBox.log(chalk.green(`✉ DM sent to ${chalk.cyan(targetUser.username)}: `) + messageContent);
-		}
-		catch(error){
-			 chatBox.log(chalk.red(`Failed to send DM to ${targetUsername}: ${(error as Error).message}`));
-		}
-
-		screen.render();
-	},
 
 	dmopen: async(args, { client, chatBox, screen, setCurrentDMChannel }) => {
 		if(args.length < 1){
@@ -224,22 +199,40 @@ const commands: Record<string, CommandHandler> = {
 	}
 };
 
+export function getCommandDefinitions(): CommandDefinition[] {
+	return [...commandDefinitions];
+}
+
+export async function executeCommandByName(commandName: string, args: string[], ctx: CommandContext): Promise<boolean>{
+	const normalizedName = commandName.toLowerCase();
+	const handler = commands[normalizedName];
+
+	if(!handler){
+		ctx.chatBox.log(chalk.red(`Unknown command: /${commandName}  (type /help)`));
+		ctx.screen.render();
+		return false;
+	}
+
+	await handler(args, ctx);
+	return true;
+}
+
 export async function handleCommand(input: string, ctx: CommandContext): Promise<boolean>{
 	if(!input.startsWith('/')){
 		return false;
 	}
 
-	const [cmd, ...args] = input.slice(1).trim().split(/\s+/);
-	const handler = commands[(cmd as string).toLowerCase()];
-
-	if(!handler){
-		ctx.chatBox.log(chalk.red(`Unknown command: /${cmd}  (type /help)`));
+	const parsed = input.slice(1).trim();
+	if(!parsed){
+		ctx.chatBox.log(chalk.yellow('Empty command. Type /help'));
 		ctx.screen.render();
 		return true;
 	}
 
-	await handler(args, ctx);
+	const [cmd, ...args] = parsed.split(/\s+/);
+	await executeCommandByName(cmd as string, args, ctx);
 	return true;
+
 }
 
 export async function sendToDMChannel(dmChannel: DMChannel, content: string, chatBox: Widgets.Log, client: Client): Promise<void>{
