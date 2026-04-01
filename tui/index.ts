@@ -26,7 +26,7 @@ const client = new Client({
 const screen = blessed.screen({
 	smartCSR : true,
 	title: 'Discord TUI',
-	fullUnicode: true,
+	fullUnicode: true
 });
 
 const { sidebar, chatBox, inputBox, helpBox, launcher } = createAppLayout(screen);
