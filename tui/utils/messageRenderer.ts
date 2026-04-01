@@ -1,17 +1,26 @@
 import chalk from 'chalk';
-import { Message } from 'discord.js';
+import { Message, User } from 'discord.js';
 import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
 import type { Widgets } from 'blessed';
 
-export async function renderMessage(message: Message, chatBox: Widgets.Log, showImages: boolean = false): Promise<void>{
+function highlightMentions(content: string, currentUser: User | null): string {
+	if (!currentUser) return content;
+	
+	const userMentionPattern = new RegExp(`<@${currentUser.id}>`, 'g');
+	
+	return content.replace(userMentionPattern, chalk.bgYellow.black(`@${currentUser.username}`));
+}
+
+export async function renderMessage(message: Message, chatBox: Widgets.Log, showImages: boolean = false, currentUser: User | null = null): Promise<void>{
 	const time = formatTime(message.createdTimestamp);
 	const author = chalk.cyan(message.author.username);
 	const timestamp = chalk.gray(`[${time}]`);
 
 
 	if(message.content){
-		chatBox.log(`${timestamp} ${author}\n${message.content}\n`);
+		const highlightedContent = highlightMentions(message.content, currentUser);
+		chatBox.log(`${timestamp} ${author}\n${highlightedContent}\n`);
 	}
 
 	if(message.attachments?.size > 0){

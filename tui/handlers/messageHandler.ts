@@ -57,7 +57,7 @@ export function setupMessageHandlers(
 		// 일반 채널 수신
 		const currentChannel = getCurrentChannel();
 		if(currentChannel && message.channel.id === currentChannel.id){
-			await renderMessage(message, chatBox, true);
+			await renderMessage(message, chatBox, true, client.user);
 			chatBox.log('');
 			screen.render();
 		}
