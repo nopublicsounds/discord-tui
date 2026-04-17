@@ -60,6 +60,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 }
 
 export function showChatUI(layout: AppLayout): void {
+	layout.launcher.hide();
 	layout.sidebar.show();
 	layout.chatBox.show();
 	layout.inputBox.show();

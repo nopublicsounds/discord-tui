@@ -1,16 +1,13 @@
 import chalk from 'chalk';
 import { Client, TextChannel, DMChannel, User } from 'discord.js';
-import type { Widgets } from 'blessed';
+import type { UIBridge } from '../ui/types.js';
 import { formatTime } from '../utils/formatters.js';
 import { handleChannelSelect } from './channelHandler.js';
 
 
 export interface CommandContext{
 	client: Client;
-	chatBox: Widgets.Log;
-	inputBox: Widgets.TextboxElement;
-	sidebar: Widgets.ListElement;
-	screen: Widgets.Screen;
+	ui: UIBridge;
 	channelMap: Map<number, TextChannel>;
 	getCurrentChannel: () => TextChannel | null;
 	setCurrentChannel: (channel: TextChannel) => void;
@@ -38,33 +35,33 @@ const commandDefinitions: CommandDefinition[] = [
 	{ name: 'quit', usage: '/quit', description: 'exit' }
 ];
 
-function renderHelp(chatBox: Widgets.Log): void {
-	chatBox.log(chalk.yellow('--- Commands ---'));
+function renderHelp(ui: UIBridge): void {
+	ui.appendChat(chalk.yellow('--- Commands ---'));
 
 	for(const command of commandDefinitions){
-		chatBox.log(chalk.cyan(command.usage) + ` - ${command.description}`);
+		ui.appendChat(chalk.cyan(command.usage) + ` - ${command.description}`);
 	}
 
-	chatBox.log('');
+	ui.appendChat('');
 }
 
 const commands: Record<string, CommandHandler> = {
-	help: (_, { chatBox }) => {
-		renderHelp(chatBox);
+	help: (_, { ui }) => {
+		renderHelp(ui);
 	},
 
-	goto: async (args, { client, chatBox, inputBox, screen, channelMap, sidebar, setCurrentChannel }) => {
+	goto: async (args, { client, ui, channelMap, setCurrentChannel }) => {
 		if(args.length === 0){
-			chatBox.log(chalk.yellow('Example: /goto #general'));
-			chatBox.log(chalk.yellow('Example: /goto #general MyServer'));
-			screen.render();
+			ui.appendChat(chalk.yellow('Example: /goto #general'));
+			ui.appendChat(chalk.yellow('Example: /goto #general MyServer'));
+			ui.render();
 			return;
 		}
 
 		const channelName = args[0]?.replace(/^#/, '');
 		const serverName = args.slice(1).join(' ');
 
-		let candidates: Array<{ channel: TextChannel, index: number }> = [];
+		const candidates: Array<{ channel: TextChannel, index: number }> = [];
 
 		for(const [index, channel] of channelMap){
 			if(channelName === channel.name){
@@ -77,39 +74,34 @@ const commands: Record<string, CommandHandler> = {
 		}
 
 		if (candidates.length === 0) {
-			chatBox.log(chalk.red(`Channel not found: #${channelName}`));
-			screen.render();
+			ui.appendChat(chalk.red(`Channel not found: #${channelName}`));
+			ui.render();
 			return;
 		}
 		
 		if(candidates.length > 1 && !serverName){
-			chatBox.log(chalk.yellow(`Found ${candidates.length} channels named #${channelName}:`));
+			ui.appendChat(chalk.yellow(`Found ${candidates.length} channels named #${channelName}:`));
 			candidates.forEach(({ channel }, i) => {
-				chatBox.log(chalk.cyan(`  ${i + 1}. #${channel.name}`) + chalk.gray(` in ${channel.guild.name}`));
+				ui.appendChat(chalk.cyan(`  ${i + 1}. #${channel.name}`) + chalk.gray(` in ${channel.guild.name}`));
 			});
-			chatBox.log(chalk.yellow(`Use: /goto #${channelName} <server>`));
-			screen.render();
+			ui.appendChat(chalk.yellow(`Use: /goto #${channelName} <server>`));
+			ui.render();
 			return;
 		}
 		
 		const { channel, index } = candidates[0] as { channel: TextChannel, index: number };
 	
 		setCurrentChannel(channel);
-		sidebar.select(index);
-		inputBox.setLabel(` # ${channel.name} `);
+		ui.selectSidebar(index);
+		ui.setInputLabel(` # ${channel.name} `);
 
-		try{
-			await handleChannelSelect(channel, chatBox, inputBox, screen, client.user);
-		}
-		catch(error){
-			chatBox.log(chalk.red('Failed to load messages'));
-		}
+		await handleChannelSelect(channel, ui, client.user);
 	},
 
-	members: async (args, { chatBox, getCurrentChannel, screen }) => {
+	members: async (args, { ui, getCurrentChannel }) => {
 		const currentChannel = getCurrentChannel();
 		if(!currentChannel){
-			chatBox.log(chalk.red('No channel selected!'));
+			ui.appendChat(chalk.red('No channel selected!'));
 			return;
 		}
 
@@ -119,41 +111,41 @@ const commands: Record<string, CommandHandler> = {
 		const dnd = members.filter(m => m.presence?.status === 'dnd');
 		const offline = members.filter(m => !m.presence || m.presence.status === 'offline');
 
-		chatBox.log(chalk.yellow(`--- Members (${members.size}) ---`));
+		ui.appendChat(chalk.yellow(`--- Members (${members.size}) ---`));
 
 		if(online.size > 0){
-			chatBox.log(chalk.green(`🍀 Online (${online.size})`));
-			online.forEach(m => chatBox.log(`  ${m.user.username}`));
+			ui.appendChat(chalk.green(`🍀 Online (${online.size})`));
+			online.forEach(m => ui.appendChat(`  ${m.user.username}`));
 		}
 		if(idle.size > 0){
-			chatBox.log(chalk.yellow(`🌙 Idle (${idle.size})`));
-			idle.forEach(m => chatBox.log(`  ${m.user.username}`));
+			ui.appendChat(chalk.yellow(`🌙 Idle (${idle.size})`));
+			idle.forEach(m => ui.appendChat(`  ${m.user.username}`));
 		}
 		if(dnd.size > 0){
-			chatBox.log(chalk.red(`⛔ DND (${dnd.size})`));
-			dnd.forEach(m => chatBox.log(`  ${m.user.username}`));
+			ui.appendChat(chalk.red(`⛔ DND (${dnd.size})`));
+			dnd.forEach(m => ui.appendChat(`  ${m.user.username}`));
 		}
 		if(offline.size > 0){
-			chatBox.log(chalk.gray(`⚫ Offline (${offline.size})`));
-			offline.forEach(m => chatBox.log(`  ${m.user.username}`));
+			ui.appendChat(chalk.gray(`⚫ Offline (${offline.size})`));
+			offline.forEach(m => ui.appendChat(`  ${m.user.username}`));
 		}
 
-		chatBox.log('');
-		screen.render();
+		ui.appendChat('');
+		ui.render();
 	},
 
-	clear: (_, { chatBox, getCurrentChannel, getCurrentDMChannel, screen }) => {
-		chatBox.setContent('');
+	clear: (_, { ui, getCurrentChannel, getCurrentDMChannel }) => {
+		ui.clearChat();
 		const dmChannel = getCurrentDMChannel();
 		if(dmChannel){
-			chatBox.setLabel(` DM - ${dmChannel.recipient?.username ?? 'Unknown'} `);
+			ui.setChatLabel(` DM - ${dmChannel.recipient?.username ?? 'Unknown'} `);
 		} else {
 			const currentChannel = getCurrentChannel();
 			if(currentChannel){
-				chatBox.setLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
+				ui.setChatLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
 			}
 		}
-		screen.render();
+		ui.render();
 	},
 
 	quit: () => {
@@ -161,16 +153,16 @@ const commands: Record<string, CommandHandler> = {
 	},
 
 
-	dmopen: async(args, { client, chatBox, inputBox, screen, setCurrentDMChannel }) => {
+	dmopen: async(args, { client, ui, setCurrentDMChannel }) => {
 		if(args.length < 1){
-			chatBox.log(chalk.yellow('Usage: /dmopen <username>'));
-			chatBox.log(chalk.yellow('Example: /dmopen Alice'));
-			screen.render();
+			ui.appendChat(chalk.yellow('Usage: /dmopen <username>'));
+			ui.appendChat(chalk.yellow('Example: /dmopen Alice'));
+			ui.render();
 			return;
 		}
 
 		const targetUsername = args[0] as string;
-		const targetUser = await findUserByUsername(client, targetUsername, chatBox, screen);
+		const targetUser = await findUserByUsername(client, targetUsername, ui);
 		if(!targetUser){
 			return;
 		}
@@ -179,12 +171,11 @@ const commands: Record<string, CommandHandler> = {
 			const dmChannel = await targetUser.createDM();
 			dmChannelCache.set(targetUsername, dmChannel);
 
-			// 채팅창 DM 뷰로 전환
-			chatBox.setContent('');
-			chatBox.setLabel(` DM - ${targetUser.username} `);
-			inputBox.setLabel(` @ ${targetUser.username} `);
-			chatBox.log(chalk.green(`✓ DM with ${chalk.cyan(targetUser.username)}`));
-			chatBox.log(chalk.yellow('--- Recent messages ---'));
+			ui.clearChat();
+			ui.setChatLabel(` DM - ${targetUser.username} `);
+			ui.setInputLabel(` @ ${targetUser.username} `);
+			ui.appendChat(chalk.green(`✓ DM with ${chalk.cyan(targetUser.username)}`));
+			ui.appendChat(chalk.yellow('--- Recent messages ---'));
 
 			const messages = await dmChannel.messages.fetch({ limit: 10 });
 			const messagesArray = Array.from(messages.values()).reverse();
@@ -194,46 +185,46 @@ const commands: Record<string, CommandHandler> = {
 					? chalk.green('You')
 					: chalk.cyan(msg.author.username);
 				if(msg.content){
-					chatBox.log(`${chalk.gray(`[${time}]`)} ${author}\n${msg.content}\n`);
+					ui.appendChat(`${chalk.gray(`[${time}]`)} ${author}\n${msg.content}\n`);
 				}
 			}
 
 			setCurrentDMChannel(dmChannel);
 		}
 		catch(error){
-			chatBox.log(chalk.red(`Failed to open DM with ${targetUsername}: ${(error as Error).message}`));
+			ui.appendChat(chalk.red(`Failed to open DM with ${targetUsername}: ${(error as Error).message}`));
 		}
 
-		screen.render();
+		ui.render();
 	},
 
-	dmclose: (_, { chatBox, inputBox, screen, setCurrentDMChannel, getCurrentChannel }) => {
+	dmclose: (_, { ui, setCurrentDMChannel, getCurrentChannel }) => {
 		setCurrentDMChannel(null);
 		const currentChannel = getCurrentChannel();
 		if(currentChannel){
-			chatBox.setLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
-			inputBox.setLabel(` # ${currentChannel.name} `);
+			ui.setChatLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
+			ui.setInputLabel(` # ${currentChannel.name} `);
 		} else {
-			chatBox.setLabel(' Chat ');
-			inputBox.setLabel(' No channel selected ');
+			ui.setChatLabel(' Chat ');
+			ui.setInputLabel(' No channel selected ');
 		}
-		chatBox.log(chalk.gray('--- DM closed ---'));
-		screen.render();
+		ui.appendChat(chalk.gray('--- DM closed ---'));
+		ui.render();
 	},
 
-	dms: (_, { chatBox, screen }) => {
+	dms: (_, { ui }) => {
 		if(dmChannelCache.size === 0){
-			chatBox.log(chalk.yellow('No open DM channels. Use /dmopen <username> to start one.'));
-			screen.render();
+			ui.appendChat(chalk.yellow('No open DM channels. Use /dmopen <username> to start one.'));
+			ui.render();
 			return;
 		}
 
-		chatBox.log(chalk.yellow('--- Open DM Channels ---'));
+		ui.appendChat(chalk.yellow('--- Open DM Channels ---'));
 		dmChannelCache.forEach((_, username) => {
-			chatBox.log(chalk.cyan(`  /dmopen ${username}`));
+			ui.appendChat(chalk.cyan(`  /dmopen ${username}`));
 		});
-		chatBox.log('');
-		screen.render();
+		ui.appendChat('');
+		ui.render();
 	}
 };
 
@@ -246,8 +237,8 @@ export async function executeCommandByName(commandName: string, args: string[], 
 	const handler = commands[normalizedName];
 
 	if(!handler){
-		ctx.chatBox.log(chalk.red(`Unknown command: /${commandName}  (type /help)`));
-		ctx.screen.render();
+		ctx.ui.appendChat(chalk.red(`Unknown command: /${commandName}  (type /help)`));
+		ctx.ui.render();
 		return false;
 	}
 
@@ -262,8 +253,8 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
 
 	const parsed = input.slice(1).trim();
 	if(!parsed){
-		ctx.chatBox.log(chalk.yellow('Empty command. Type /help'));
-		ctx.screen.render();
+		ctx.ui.appendChat(chalk.yellow('Empty command. Type /help'));
+		ctx.ui.render();
 		return true;
 	}
 
@@ -273,18 +264,18 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
 
 }
 
-export async function sendToDMChannel(dmChannel: DMChannel, content: string, chatBox: Widgets.Log, client: Client): Promise<void>{
+export async function sendToDMChannel(dmChannel: DMChannel, content: string, ui: UIBridge, client: Client): Promise<void>{
 	try{
 		await dmChannel.send(content);
 		const time = formatTime(Date.now());
-		chatBox.log(chalk.gray(`[${time}]`) + ' ' + chalk.green('You') + ': ' + content);
+		ui.appendChat(chalk.gray(`[${time}]`) + ' ' + chalk.green('You') + ': ' + content);
 	}
 	catch(error){
-		chatBox.log(chalk.red(`Failed to send message: ${(error as Error).message}`));
+		ui.appendChat(chalk.red(`Failed to send message: ${(error as Error).message}`));
 	}
 }
 
-async function findUserByUsername(client: Client, username: string, chatBox: Widgets.Log, screen: Widgets.Screen): Promise<User | null>{
+async function findUserByUsername(client: Client, username: string, ui: UIBridge): Promise<User | null>{
 	const cached = dmChannelCache.get(username);
 	if(cached?.recipient){
 		return cached.recipient;
@@ -310,9 +301,9 @@ async function findUserByUsername(client: Client, username: string, chatBox: Wid
 		}
 	}
 
-	chatBox.log(chalk.red(`User not found: ${username}`));
-	screen.render();
-  	return null;
+	ui.appendChat(chalk.red(`User not found: ${username}`));
+	ui.render();
+	return null;
 }
 
 

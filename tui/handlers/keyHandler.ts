@@ -1,46 +1,57 @@
-import type { Widgets } from 'blessed';
+import type { UIBridge } from '../ui/types.js';
 
-export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListElement, chatBox: Widgets.Log, inputBox: Widgets.TextboxElement){
+export function setupKeyBindings(ui: Pick<UIBridge,
+	'onGlobalKey' |
+	'onSidebarKey' |
+	'onInputKey' |
+	'onInputKeypress' |
+	'getChatHeight' |
+	'scrollChat' |
+	'render' |
+	'focusInput' |
+	'getInputValue' |
+	'setInputBorderColor'
+>){
 	const scrollChat = (delta: number): void => {
-		chatBox.scroll(delta);
-		screen.render();
+		ui.scrollChat(delta);
+		ui.render();
 	};
 
-	screen.key(['C-c'], () => {
+	ui.onGlobalKey(['C-c'], () => {
 		process.exit(0);
 	});
 
-	sidebar.key(['C-d'], () => {
-		inputBox.focus();
-		screen.render();
+	ui.onSidebarKey(['C-d'], () => {
+		ui.focusInput();
+		ui.render();
 	});
 
-	inputBox.key(['up'], () => {
+	ui.onInputKey(['up'], () => {
 		scrollChat(-1);
 	});
 
-	inputBox.key(['down'], () => {
+	ui.onInputKey(['down'], () => {
 		scrollChat(1);
 	});
 
-	inputBox.key(['pageup'], () => {
-		scrollChat(-(chatBox.height as number));
+	ui.onInputKey(['pageup'], () => {
+		scrollChat(-ui.getChatHeight());
 	});
 
-	inputBox.key(['pagedown'], () => {
-		scrollChat(chatBox.height as number);
+	ui.onInputKey(['pagedown'], () => {
+		scrollChat(ui.getChatHeight());
 	});
 
-	inputBox.on('keypress', (ch) => {
-		const value = inputBox.getValue();
+	ui.onInputKeypress((ch) => {
+		const value = ui.getInputValue();
 		if(value.startsWith('/') || ch === '/'){
-			inputBox.style.border.fg = 'yellow';
+			ui.setInputBorderColor('yellow');
 		}
 
 		else{
-			inputBox.style.border.fg = '#5865F2';
+			ui.setInputBorderColor('#5865F2');
 		}
 
-		screen.render();
+		ui.render();
 	});
 }

@@ -1,11 +1,15 @@
 import { ChannelType, Client, TextChannel } from 'discord.js';
-import type { Widgets } from 'blessed';
 
-export function populateSidebar(client: Client, sidebar: Widgets.ListElement, channelMap: Map<number, TextChannel>): number | undefined {
+export type SidebarModel = {
+	items: string[];
+	channelMap: Map<number, TextChannel>;
+	firstChannelIndex: number | undefined;
+};
+
+export function buildSidebarModel(client: Client): SidebarModel {
 	const sidebarItems: string[] = [];
+	const channelMap = new Map<number, TextChannel>();
 	let itemIndex = 0;
-
-	channelMap.clear();
 
 	client.guilds.cache.forEach((guild) => {
 		sidebarItems.push(`➤  ${guild.name}`);
@@ -27,7 +31,9 @@ export function populateSidebar(client: Client, sidebar: Widgets.ListElement, ch
 		itemIndex++;
 	});
 
-	sidebar.setItems(sidebarItems);
-
-	return Array.from(channelMap.keys())[0];
+	return {
+		items: sidebarItems,
+		channelMap,
+		firstChannelIndex: Array.from(channelMap.keys())[0]
+	};
 }

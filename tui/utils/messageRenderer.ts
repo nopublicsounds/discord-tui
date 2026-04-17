@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import { Message, User } from 'discord.js';
 import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
-import type { Widgets } from 'blessed';
+import type { UIBridge } from '../ui/types.js';
 
 function formatAuthorLabel(message: Message, currentUser: User | null): string {
 	if(currentUser && message.author.id === currentUser.id){
@@ -36,7 +36,7 @@ function getMessageStatus(message: Message): string {
 
 export async function renderMessage(
 	message: Message, 
-	chatBox: Widgets.Log, 
+	ui: Pick<UIBridge, 'appendChat'>,
 	showImages: boolean = false, 
 	currentUser: User | null = null,
 	lastAuthorId: string | null = null
@@ -47,36 +47,36 @@ export async function renderMessage(
 	const isGrouped = lastAuthorId === message.author.id;
 
 	if (!isGrouped) {
-		chatBox.log(`${timestamp} ${author}`);
+		ui.appendChat(`${timestamp} ${author}`);
 	}
 
 	if(message.content){
 		const highlightedContent = highlightMentions(message.content, currentUser);
 		const messageStatus = getMessageStatus(message);
-		chatBox.log(`${highlightedContent}${messageStatus}`);
+		ui.appendChat(`${highlightedContent}${messageStatus}`);
 	}
 
 	if(message.attachments?.size > 0){
 		for(const attachment of message.attachments.values()){
-			chatBox.log(`  ${chalk.blue(`${attachment.name}`)}`);
-			chatBox.log(`  ${chalk.dim(`→ ${attachment.url}`)}`);
+			ui.appendChat(`  ${chalk.blue(`${attachment.name}`)}`);
+			ui.appendChat(`  ${chalk.dim(`→ ${attachment.url}`)}`);
 
 			if(showImages && attachment.contentType?.startsWith('image/')){
 				try{
 					const preview = await displayImage(attachment.url);
 					if(preview){
-						chatBox.log(preview + '\n');
+						ui.appendChat(preview + '\n');
 					}
 					else{
-						chatBox.log(chalk.dim('[Image preview unavailable in this terminal]') + '\n');
+						ui.appendChat(chalk.dim('[Image preview unavailable in this terminal]') + '\n');
 					}
 				}
 				catch(error){
-					chatBox.log(chalk.red('Failed to load image') + '\n');
+					ui.appendChat(chalk.red('Failed to load image') + '\n');
 				}
 			}
 		}
 	}
 
-	chatBox.log('');
+	ui.appendChat('');
 }

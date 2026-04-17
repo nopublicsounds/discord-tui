@@ -8,8 +8,8 @@ import { setupMessageHandlers } from './handlers/messageHandler.js';
 import { handleChannelSelect } from './handlers/channelHandler.js';
 import { setupSidebarHandlers } from './handlers/sidebarHandler.js';
 import { runSetup } from './setup.js';
-import { createAppLayout, showChatUI } from './ui/layout.js';
-import { populateSidebar } from './utils/channelList.js';
+import { createBlessedUIBridge } from './ui/blessedBridge.js';
+import { buildSidebarModel } from './utils/channelList.js';
 
 const client = new Client({
 	intents: [
@@ -29,55 +29,58 @@ const screen = blessed.screen({
 	fullUnicode: true
 });
 
-const { sidebar, chatBox, inputBox, helpBox, launcher } = createAppLayout(screen);
+const ui = createBlessedUIBridge(screen);
 
 let currentChannel: TextChannel | null = null;
 let currentDMChannel: DMChannel | null = null;
-const channelMap = new Map<number, TextChannel>();
+let channelMap = new Map<number, TextChannel>();
 let launcherLocked = false;
 
-setupKeyBindings(screen, sidebar, chatBox, inputBox);
+setupKeyBindings(ui);
 setupMessageHandlers(
-	client, chatBox, inputBox, sidebar, screen, channelMap,
+	client, ui, channelMap,
 	() => currentChannel,
 	(channel) => { currentChannel = channel; },
 	() => currentDMChannel,
 	(channel) => { currentDMChannel = channel; }
 );
-setupSidebarHandlers(sidebar, inputBox, screen, channelMap, async (channel) => {
-	currentChannel = channel;
-	await handleChannelSelect(channel, chatBox, inputBox, screen, client.user);
-});
 
 client.once(Events.ClientReady, () => {
-	const firstChannelIndex = populateSidebar(client, sidebar, channelMap);
-	if(firstChannelIndex !== undefined){
-		sidebar.select(firstChannelIndex);
+	const model = buildSidebarModel(client);
+	channelMap = model.channelMap;
+	ui.setSidebarItems(model.items);
+
+	setupSidebarHandlers(ui, channelMap, model.items.length, async (channel) => {
+		currentChannel = channel;
+		await handleChannelSelect(channel, ui, client.user);
+	});
+
+	if(model.firstChannelIndex !== undefined){
+		ui.selectSidebar(model.firstChannelIndex);
 	}
 
-	chatBox.setContent('');
-	sidebar.focus();
-	screen.render();
+	ui.clearChat();
+	ui.focusSidebar();
+	ui.render();
 });
 
 function startChatClient(): void {
-	launcher.hide();
-	showChatUI({ sidebar, chatBox, inputBox, helpBox, launcher });
-	chatBox.setContent(chalk.hex('#99AAB5')('Connecting to Discord...'));
-	screen.render();
+	ui.showChatUI();
+	ui.setChatContent(chalk.hex('#99AAB5')('Connecting to Discord...'));
+	ui.render();
 	void client.login(process.env.DISCORD_TOKEN).catch(err => {
-		chatBox.setContent(chalk.hex('#FF0000')(`Failed to connect: ${err.message}`));
-		screen.render();
+		ui.setChatContent(chalk.hex('#FF0000')(`Failed to connect: ${err.message}`));
+		ui.render();
 	});
 }
 
-screen.key(['enter'], () => {
+ui.onGlobalKey(['enter'], () => {
 	if (launcherLocked) return;
 	launcherLocked = true;
 	startChatClient();
 });
 
-screen.key(['s'], async () => {
+ui.onGlobalKey(['s'], async () => {
 	if (launcherLocked) return;
 	launcherLocked = true;
 	screen.destroy();
@@ -85,5 +88,5 @@ screen.key(['s'], async () => {
 	process.exit(0);
 });
 
-chatBox.focus();
-screen.render();
+ui.focusSidebar();
+ui.render();
