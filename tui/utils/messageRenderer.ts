@@ -4,6 +4,8 @@ import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
 import type { UIBridge } from '../ui/types.js';
 
+const GROUP_WINDOW_MS = 3 * 60 * 1000;
+
 function formatAuthorLabel(message: Message, currentUser: User | null): string {
 	if(currentUser && message.author.id === currentUser.id){
 		return chalk.green('👤 You');
@@ -39,14 +41,25 @@ export async function renderMessage(
 	ui: Pick<UIBridge, 'appendChat'>,
 	showImages: boolean = false, 
 	currentUser: User | null = null,
-	lastAuthorId: string | null = null
+	lastAuthorId: string | null = null,
+	lastMessageTimestamp: number | null = null
 ): Promise<void> {
 	const time = formatTime(message.createdTimestamp);
 	const author = formatAuthorLabel(message, currentUser);
 	const timestamp = chalk.gray(`[${time}]`);
-	const isGrouped = lastAuthorId === message.author.id;
+	const timeDelta =
+		lastMessageTimestamp === null
+			? Number.POSITIVE_INFINITY
+			: message.createdTimestamp - lastMessageTimestamp;
+	const isGrouped =
+		lastAuthorId === message.author.id
+		&& timeDelta >= 0
+		&& timeDelta <= GROUP_WINDOW_MS;
 
 	if (!isGrouped) {
+		if (lastAuthorId !== null) {
+			ui.appendChat('');
+		}
 		ui.appendChat(`${timestamp} ${author}`);
 	}
 
@@ -58,25 +71,20 @@ export async function renderMessage(
 
 	if(message.attachments?.size > 0){
 		for(const attachment of message.attachments.values()){
-			ui.appendChat(`  ${chalk.blue(`${attachment.name}`)}`);
-			ui.appendChat(`  ${chalk.dim(`→ ${attachment.url}`)}`);
-
 			if(showImages && attachment.contentType?.startsWith('image/')){
 				try{
 					const preview = await displayImage(attachment.url);
 					if(preview){
-						ui.appendChat(preview + '\n');
+						ui.appendChat(preview);
 					}
 					else{
-						ui.appendChat(chalk.dim('[Image preview unavailable in this terminal]') + '\n');
+						ui.appendChat(chalk.dim('[Image preview unavailable in this terminal]'));
 					}
 				}
 				catch(error){
-					ui.appendChat(chalk.red('Failed to load image') + '\n');
+					ui.appendChat(chalk.red('Failed to load image'));
 				}
 			}
 		}
 	}
-
-	ui.appendChat('');
 }

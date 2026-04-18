@@ -12,9 +12,11 @@ async function renderChannelMessages(channelName: string, messages: Message[], u
 	ui.appendChat(chalk.yellow('--- Recent messages ---'));
 
 	let lastAuthorId: string | null = null;
+	let lastMessageTimestamp: number | null = null;
 	for (const message of messages) {
-		await renderMessage(message, ui, true, currentUser, lastAuthorId);
+		await renderMessage(message, ui, true, currentUser, lastAuthorId, lastMessageTimestamp);
 		lastAuthorId = message.author.id;
+		lastMessageTimestamp = message.createdTimestamp;
 	}
 }
 

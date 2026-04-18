@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { Client, TextChannel, DMChannel, User } from 'discord.js';
 import type { UIBridge } from '../ui/types.js';
 import { formatTime } from '../utils/formatters.js';
+import { renderMessage } from '../utils/messageRenderer.js';
 import { handleChannelSelect } from './channelHandler.js';
 
 
@@ -179,14 +180,12 @@ const commands: Record<string, CommandHandler> = {
 
 			const messages = await dmChannel.messages.fetch({ limit: 10 });
 			const messagesArray = Array.from(messages.values()).reverse();
+			let lastAuthorId: string | null = null;
+			let lastMessageTimestamp: number | null = null;
 			for(const msg of messagesArray){
-				const time = formatTime(msg.createdTimestamp);
-				const author = msg.author.id === client.user?.id
-					? chalk.green('You')
-					: chalk.cyan(msg.author.username);
-				if(msg.content){
-					ui.appendChat(`${chalk.gray(`[${time}]`)} ${author}\n${msg.content}\n`);
-				}
+				await renderMessage(msg, ui, true, client.user, lastAuthorId, lastMessageTimestamp);
+				lastAuthorId = msg.author.id;
+				lastMessageTimestamp = msg.createdTimestamp;
 			}
 
 			setCurrentDMChannel(dmChannel);
