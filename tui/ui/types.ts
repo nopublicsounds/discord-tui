@@ -6,6 +6,7 @@ export interface UIBridge {
 	hideChatUI(): void;
 
 	clearChat(): void;
+	hardRefresh(): void;
 	appendChat(line: string): void;
 	setChatContent(content: string): void;
 	setChatLabel(label: string): void;

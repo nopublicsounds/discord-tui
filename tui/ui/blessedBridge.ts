@@ -26,7 +26,17 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 		},
 
 		clearChat(): void {
+			const logWidget = layout.chatBox as blessed.Widgets.Log & {
+				resetScroll?: () => void;
+			};
+
 			layout.chatBox.setContent('');
+			logWidget.resetScroll?.();
+		},
+
+		hardRefresh(): void {
+			const screenWithRealloc = screen as blessed.Widgets.Screen & { realloc?: () => void };
+			screenWithRealloc.realloc?.();
 		},
 
 		appendChat(line: string): void {
