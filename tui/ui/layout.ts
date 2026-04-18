@@ -5,32 +5,44 @@ import { createChatBox } from '../components/chatbox.js';
 import { createInputBox } from '../components/inputbox.js';
 import { LOGO } from '../components/logo.js';
 import { createSidebar } from '../components/sidebar.js';
+import { createTitleBar, renderTitleBarContent } from '../components/titlebar.js';
 import { createGradientLogo } from '../utils/logoGradient.js';
 
 export type AppLayout = {
+	titleBar: blessed.Widgets.BoxElement;
 	sidebar: blessed.Widgets.ListElement;
 	chatBox: blessed.Widgets.Log;
 	inputBox: blessed.Widgets.TextboxElement;
-	helpBox: blessed.Widgets.BoxElement;
+	statusBar: blessed.Widgets.BoxElement;
 	launcher: blessed.Widgets.BoxElement;
 };
 
 export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
+	const titleBar = createTitleBar(screen);
 	const sidebar = createSidebar(screen);
 	const chatBox = createChatBox(screen);
 	const inputBox = createInputBox(screen);
-	const helpBox = blessed.box({
+
+	// Status bar (bottom left, under sidebar)
+	const statusBar = blessed.box({
 		parent: screen,
-		name: 'helpBox',
-		height: 2,
-		bottom: 3,
-		left: '30%',
-		width: '70%',
+		bottom: 0,
+		left: 0,
+		width: '25%',
+		height: 3,
+		border: { type: 'line' },
+		style: {
+			bg: '#2F3136',
+			fg: '#72767D',
+			border: { fg: '#202225' }
+		},
+		label: { text: ' \u26a1 Status ', side: 'left' } as any,
 		align: 'center',
 		valign: 'middle',
-		content: chalk.hex('#99AAB5')('↑/↓ Scroll  •  PgUp/PgDn Fast Scroll  •  Ctrl+D Change Focus • /help Show Commands'),
+		content: chalk.hex('#72767D')('Not connected'),
 		tags: false,
 	});
+
 	const coloredLogo = createGradientLogo(LOGO, '#5865F2', '#8458f2', (color, text) => chalk.hex(color)(text));
 	const launcher = blessed.box({
 		parent: screen,
@@ -40,36 +52,50 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		height: 'shrink',
 		align: 'center',
 		valign: 'middle',
+		style: {
+			bg: '#2F3136',
+		},
+		padding: { left: 4, right: 4, top: 1, bottom: 1 },
+		border: { type: 'line' },
 		content: [
 			coloredLogo,
-			chalk.hex('#57F287')('[ Enter ] Start chat client'),
-			chalk.hex('#FEE75C')('[ s ] Run setup (save token)'),
-			chalk.hex('#99AAB5')('[ Ctrl+C ] Exit')
+			'',
+			chalk.hex('#57F287').bold('  [ Enter ]  ') + chalk.hex('#DCDDDE')('Start chat client'),
+			chalk.hex('#FEE75C').bold('  [  s   ]  ') + chalk.hex('#DCDDDE')('Run setup (save token)'),
+			chalk.hex('#ED4245').bold('  [ Ctrl+C ]  ') + chalk.hex('#DCDDDE')('Exit'),
+			'',
+			chalk.hex('#4F545C')('─'.repeat(46)),
+			chalk.hex('#72767D')('  ↑/↓  Scroll  •  PgUp/PgDn  Fast scroll'),
+			chalk.hex('#72767D')('  Ctrl+D  Switch focus  •  /help  Commands'),
 		].join('\n')
 	});
 
-	hideChatUI({ sidebar, chatBox, inputBox, helpBox, launcher });
+	hideChatUI({ titleBar, sidebar, chatBox, inputBox, statusBar, launcher });
 
 	return {
+		titleBar,
 		sidebar,
 		chatBox,
 		inputBox,
-		helpBox,
+		statusBar,
 		launcher
 	};
 }
 
 export function showChatUI(layout: AppLayout): void {
 	layout.launcher.hide();
+	layout.titleBar.show();
 	layout.sidebar.show();
 	layout.chatBox.show();
 	layout.inputBox.show();
-	layout.helpBox.show();
+	layout.statusBar.show();
 }
 
 export function hideChatUI(layout: AppLayout): void {
 	layout.sidebar.hide();
 	layout.chatBox.hide();
 	layout.inputBox.hide();
-	layout.helpBox.hide();
+	layout.statusBar.hide();
 }
+
+export { renderTitleBarContent };

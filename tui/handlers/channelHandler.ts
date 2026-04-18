@@ -18,12 +18,14 @@ async function renderChannelMessages(channelName: string, messages: Message[], u
 	}
 }
 
-export async function handleChannelSelect(channel: TextChannel, ui: Pick<UIBridge, 'setChatLabel' | 'appendChat' | 'clearChat' | 'render'>, currentUser: User | null = null): Promise<void>{
+export async function handleChannelSelect(channel: TextChannel, ui: Pick<UIBridge, 'setChatLabel' | 'setInputLabel' | 'setTitleBar' | 'appendChat' | 'clearChat' | 'render'>, currentUser: User | null = null): Promise<void>{
 	try{
 		const messages = await channel.messages.fetch({ limit: RECENT_MESSAGE_LIMIT });
 		const messagesArray = Array.from(messages.values()).reverse();
 
-		ui.setChatLabel(`▶${channel.guild.name} - #${channel.name}`);
+		ui.setChatLabel(` #${channel.name} `);
+		ui.setInputLabel(`Message #${channel.name}`);
+		ui.setTitleBar(channel.guild.name, channel.name, 'connected');
 		await renderChannelMessages(channel.name, messagesArray, ui, currentUser);
 	}
 

@@ -24,6 +24,9 @@ export interface UIBridge {
 	scrollChat(delta: number): void;
 	getChatHeight(): number;
 
+	setTitleBar(serverName: string | null, channelName: string | null, status: 'connecting' | 'connected' | 'disconnected'): void;
+	setStatusBar(content: string): void;
+
 	onGlobalKey(keys: string[], handler: KeyHandler): void;
 	onSidebarKey(keys: string[], handler: KeyHandler): void;
 	onInputKey(keys: string[], handler: KeyHandler): void;

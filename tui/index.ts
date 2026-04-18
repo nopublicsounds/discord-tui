@@ -66,9 +66,11 @@ client.once(Events.ClientReady, () => {
 
 function startChatClient(): void {
 	ui.showChatUI();
+	ui.setTitleBar(null, null, 'connecting');
 	ui.setChatContent(chalk.hex('#99AAB5')('Connecting to Discord...'));
 	ui.render();
 	void client.login(process.env.DISCORD_TOKEN).catch(err => {
+		ui.setTitleBar(null, null, 'disconnected');
 		ui.setChatContent(chalk.hex('#FF0000')(`Failed to connect: ${err.message}`));
 		ui.render();
 	});

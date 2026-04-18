@@ -1,6 +1,6 @@
 import type blessed from 'blessed';
 
-import { createAppLayout, hideChatUI, showChatUI } from './layout.js';
+import { createAppLayout, hideChatUI, renderTitleBarContent, showChatUI } from './layout.js';
 import type { KeyHandler, UIBridge } from './types.js';
 
 export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge {
@@ -58,7 +58,7 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 		},
 
 		setInputLabel(label: string): void {
-			layout.inputBox.setLabel(label);
+			layout.inputBox.setLabel(` ✦ ${label} `);
 		},
 
 		setInputBorderColor(color: string): void {
@@ -83,6 +83,14 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 
 		getChatHeight(): number {
 			return layout.chatBox.height as number;
+		},
+
+		setTitleBar(serverName, channelName, status): void {
+			layout.titleBar.setContent(renderTitleBarContent(serverName, channelName, status));
+		},
+
+		setStatusBar(content: string): void {
+			layout.statusBar.setContent(content);
 		},
 
 		onGlobalKey(keys: string[], handler: KeyHandler): void {

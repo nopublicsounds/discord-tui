@@ -5,16 +5,23 @@ export function createInputBox(screen: blessed.Widgets.Screen){
 		parent: screen,
 		name: 'inputBox',
 		bottom: 0,
-		left: '30%',
-		width: '70%',
+		left: '25%',
+		width: '75%',
 		height: 3,
 		border: {
 			type: 'line'
 		},
-		label: ' No channel selected ',
+		label: ' ✦ No channel selected ',
 		style: {
+			bg: '#40444B',
+			fg: '#DCDDDE',
 			border: {
-				fg: '#5865F2'
+				fg: '#202225'
+			},
+			focus: {
+				border: {
+					fg: '#5865F2'
+				}
 			}
 		},
 		keys: true,
