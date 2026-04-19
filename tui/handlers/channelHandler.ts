@@ -1,14 +1,16 @@
 import chalk from 'chalk';
 import { Message, TextChannel, User } from 'discord.js';
 import { renderMessage } from '../utils/messageRenderer.js';
+import { safeChannelName, safeGuildName } from '../utils/uiText.js';
 import type { UIBridge } from '../ui/types.js';
 
-const RECENT_MESSAGE_LIMIT = 10;
+const RECENT_MESSAGE_LIMIT = 20;
 let activeChannelLoadId = 0;
 
 async function renderChannelMessages(channelName: string, messages: Message[], ui: Pick<UIBridge, 'clearChat' | 'appendChat'>, currentUser: User | null): Promise<void> {
+	const channelDisplayName = safeChannelName(channelName);
 	ui.clearChat();
-	ui.appendChat(chalk.green(`✓ Joined #${channelName}`));
+	ui.appendChat(chalk.green(`✓ Joined #${channelDisplayName}`));
 	ui.appendChat('');
 	ui.appendChat(chalk.yellow('--- Recent messages ---'));
 
@@ -27,17 +29,19 @@ export async function handleChannelSelect(
 	currentUser: User | null = null
 ): Promise<void>{
 	const loadId = ++activeChannelLoadId;
+	const channelDisplayName = safeChannelName(channel.name);
+	const guildDisplayName = safeGuildName(channel.guild.name);
 
 	ui.hardRefresh();
 	ui.showChatUI();
 	ui.clearChat();
 	ui.setChatContent('');
 	ui.clearInput();
-	ui.setChatLabel(` #${channel.name} `);
-	ui.setInputLabel(`Message #${channel.name}`);
-	ui.setTitleBar(channel.guild.name, channel.name, 'connecting');
-	ui.setStatusBar(chalk.hex('#99AAB5')(`Loading #${channel.name}...`));
-	ui.appendChat(chalk.hex('#99AAB5')(`Loading #${channel.name}...`));
+	ui.setChatLabel(` #${channelDisplayName} `);
+	ui.setInputLabel(`Message #${channelDisplayName}`);
+	ui.setTitleBar(guildDisplayName, channelDisplayName, 'connecting');
+	ui.setStatusBar(chalk.hex('#99AAB5')(`Loading #${channelDisplayName}...`));
+	ui.appendChat(chalk.hex('#99AAB5')(`Loading #${channelDisplayName}...`));
 	ui.render();
 
 	try{
@@ -47,17 +51,17 @@ export async function handleChannelSelect(
 			return;
 		}
 
-		ui.setTitleBar(channel.guild.name, channel.name, 'connected');
-		ui.setStatusBar(chalk.hex('#57F287')(`Connected to #${channel.name}`));
-		await renderChannelMessages(channel.name, messagesArray, ui, currentUser);
+		ui.setTitleBar(guildDisplayName, channelDisplayName, 'connected');
+		ui.setStatusBar(chalk.hex('#57F287')(`Connected to #${channelDisplayName}`));
+		await renderChannelMessages(channelDisplayName, messagesArray, ui, currentUser);
 	}
 
 	catch{
 		if (loadId !== activeChannelLoadId) {
 			return;
 		}
-		ui.setTitleBar(channel.guild.name, channel.name, 'disconnected');
-		ui.setStatusBar(chalk.hex('#ED4245')(`Failed to load #${channel.name}`));
+		ui.setTitleBar(guildDisplayName, channelDisplayName, 'disconnected');
+		ui.setStatusBar(chalk.hex('#ED4245')(`Failed to load #${channelDisplayName}`));
 		ui.clearChat();
 		ui.appendChat(chalk.red('Failed to load messages'));
 	}

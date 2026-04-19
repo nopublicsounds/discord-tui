@@ -1,5 +1,6 @@
 import { TextChannel } from 'discord.js';
 import type { UIBridge } from '../ui/types.js';
+import { safeChannelName } from '../utils/uiText.js';
 
 function getNextSelectableIndex(currentIndex: number, totalItems: number, channelMap: Map<number, TextChannel>, step: 1 | -1): number {
 	const selected = currentIndex;
@@ -37,7 +38,7 @@ export function setupSidebarHandlers(
 			return;
 		}
 
-		ui.setInputLabel(` # ${channel.name} `);
+		ui.setInputLabel(` # ${safeChannelName(channel.name)} `);
 		await onChannelSelect(channel);
 		setImmediate(() => {
 			ui.focusInput();

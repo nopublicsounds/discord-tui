@@ -1,4 +1,5 @@
 import { ChannelType, Client, TextChannel } from 'discord.js';
+import { safeChannelName, safeGuildName } from './uiText.js';
 
 export type SidebarModel = {
 	items: string[];
@@ -12,7 +13,7 @@ export function buildSidebarModel(client: Client): SidebarModel {
 	let itemIndex = 0;
 
 	client.guilds.cache.forEach((guild) => {
-		sidebarItems.push(`➤  ${guild.name}`);
+		sidebarItems.push(`➤  ${safeGuildName(guild.name)}`);
 		itemIndex++;
 
 		const textChannels = guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildText);
@@ -22,7 +23,7 @@ export function buildSidebarModel(client: Client): SidebarModel {
 		}
 
 		textChannels.forEach((channel) => {
-			sidebarItems.push(`     # ${channel.name}`);
+			sidebarItems.push(`     # ${safeChannelName(channel.name)}`);
 			channelMap.set(itemIndex, channel as TextChannel);
 			itemIndex++;
 		});

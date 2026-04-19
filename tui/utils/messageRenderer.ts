@@ -8,11 +8,12 @@ const GROUP_WINDOW_MS = 3 * 60 * 1000;
 
 function formatAuthorLabel(message: Message, currentUser: User | null): string {
 	if(currentUser && message.author.id === currentUser.id){
-		return chalk.green('👤 You');
+		return chalk.green('You');
 	}
 
-	const authorEmoji = message.author.bot ? '🤖' : '👤';
-	return chalk.cyan(`${authorEmoji} ${message.author.username}`);
+	return message.author.bot
+		? chalk.magenta(message.author.username)
+		: chalk.cyan(message.author.username);
 }
 
 function highlightMentions(content: string, currentUser: User | null): string {

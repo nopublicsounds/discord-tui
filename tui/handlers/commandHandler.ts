@@ -3,6 +3,7 @@ import { Client, TextChannel, DMChannel, User } from 'discord.js';
 import type { UIBridge } from '../ui/types.js';
 import { formatTime } from '../utils/formatters.js';
 import { renderMessage } from '../utils/messageRenderer.js';
+import { safeChannelName, safeGuildName } from '../utils/uiText.js';
 import { handleChannelSelect } from './channelHandler.js';
 
 
@@ -83,7 +84,10 @@ const commands: Record<string, CommandHandler> = {
 		if(candidates.length > 1 && !serverName){
 			ui.appendChat(chalk.yellow(`Found ${candidates.length} channels named #${channelName}:`));
 			candidates.forEach(({ channel }, i) => {
-				ui.appendChat(chalk.cyan(`  ${i + 1}. #${channel.name}`) + chalk.gray(` in ${channel.guild.name}`));
+				ui.appendChat(
+					chalk.cyan(`  ${i + 1}. #${safeChannelName(channel.name)}`) +
+					chalk.gray(` in ${safeGuildName(channel.guild.name)}`)
+				);
 			});
 			ui.appendChat(chalk.yellow(`Use: /goto #${channelName} <server>`));
 			ui.render();
@@ -94,7 +98,7 @@ const commands: Record<string, CommandHandler> = {
 	
 		setCurrentChannel(channel);
 		ui.selectSidebar(index);
-		ui.setInputLabel(` # ${channel.name} `);
+		ui.setInputLabel(` # ${safeChannelName(channel.name)} `);
 
 		await handleChannelSelect(channel, ui, client.user);
 	},
@@ -143,7 +147,7 @@ const commands: Record<string, CommandHandler> = {
 		} else {
 			const currentChannel = getCurrentChannel();
 			if(currentChannel){
-				ui.setChatLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
+				ui.setChatLabel(`▶${safeGuildName(currentChannel.guild.name)} - #${safeChannelName(currentChannel.name)}`);
 			}
 		}
 		ui.render();
@@ -201,8 +205,8 @@ const commands: Record<string, CommandHandler> = {
 		setCurrentDMChannel(null);
 		const currentChannel = getCurrentChannel();
 		if(currentChannel){
-			ui.setChatLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
-			ui.setInputLabel(` # ${currentChannel.name} `);
+			ui.setChatLabel(`▶${safeGuildName(currentChannel.guild.name)} - #${safeChannelName(currentChannel.name)}`);
+			ui.setInputLabel(` # ${safeChannelName(currentChannel.name)} `);
 		} else {
 			ui.setChatLabel(' Chat ');
 			ui.setInputLabel(' No channel selected ');
