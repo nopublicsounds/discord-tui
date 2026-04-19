@@ -16,12 +16,19 @@ function formatAuthorLabel(message: Message, currentUser: User | null): string {
 		: chalk.cyan(message.author.username);
 }
 
-function highlightMentions(content: string, currentUser: User | null): string {
-	if (!currentUser) return content;
-	
-	const userMentionPattern = new RegExp(`<@${currentUser.id}>`, 'g');
-	
-	return content.replace(userMentionPattern, chalk.bgYellow.black(`@${currentUser.username}`));
+function highlightMentions(content: string, message: Message, currentUser: User | null): string {
+	let result = content;
+
+	message.mentions.users.forEach((user) => {
+		const pattern = new RegExp(`<@!?${user.id}>`, 'g');
+		const isCurrentUser = currentUser && user.id === currentUser.id;
+		const display = isCurrentUser
+			? chalk.bgYellow.black(`@${user.username}`)
+			: chalk.yellow(`@${user.username}`);
+		result = result.replace(pattern, display);
+	});
+
+	return result;
 }
 
 function getMessageStatus(message: Message): string {
@@ -65,7 +72,7 @@ export async function renderMessage(
 	}
 
 	if(message.content){
-		const highlightedContent = highlightMentions(message.content, currentUser);
+		const highlightedContent = highlightMentions(message.content, message, currentUser);
 		const messageStatus = getMessageStatus(message);
 		ui.appendChat(`${highlightedContent}${messageStatus}`);
 	}
