@@ -31,6 +31,10 @@ npm start
 
 The launcher screen will appear. Press `s` to enter setup and paste your Discord bot token.
 
+## Known Limitation
+
+To prevent layout distortion in the terminal UI, emoji in channel and server names are not rendered in TUI labels (sidebar, title, and chat header). This is a display-only safeguard: internal Discord channel matching still uses the original names.
+
 ### 4. Invite Bot to Server
 1. Go to "OAuth2" → "URL Generator"
 2. Select scopes: `bot`
