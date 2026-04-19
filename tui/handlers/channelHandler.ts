@@ -4,7 +4,7 @@ import { renderMessage } from '../utils/messageRenderer.js';
 import { safeChannelName, safeGuildName } from '../utils/uiText.js';
 import type { UIBridge } from '../ui/types.js';
 
-const RECENT_MESSAGE_LIMIT = 20;
+const RECENT_MESSAGE_LIMIT = 50;
 let activeChannelLoadId = 0;
 
 async function renderChannelMessages(channelName: string, messages: Message[], ui: Pick<UIBridge, 'clearChat' | 'appendChat'>, currentUser: User | null): Promise<void> {
