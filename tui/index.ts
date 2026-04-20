@@ -3,6 +3,7 @@ import 'dotenv/config';
 import chalk from 'chalk';
 
 import { Client, DMChannel, GatewayIntentBits, Events, TextChannel } from 'discord.js';
+import { patchBlessedUnicode } from './utils/unicodePatch.js';
 import { setupKeyBindings } from './handlers/keyHandler.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
 import { handleChannelSelect } from './handlers/channelHandler.js';
@@ -23,10 +24,14 @@ const client = new Client({
 	]
 });
 
+patchBlessedUnicode();
+
 const screen = blessed.screen({
-	smartCSR : true,
+	smartCSR: true,
 	title: 'Discord TUI',
-	fullUnicode: true
+	fullUnicode: true,
+	terminal: 'xterm-256color',
+	sendFocus: true
 });
 
 const ui = createBlessedUIBridge(screen);

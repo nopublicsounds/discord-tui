@@ -18,7 +18,7 @@ export function createChatBox(screen: blessed.Widgets.Screen){
 			}
 		},
 		label: {
-			text: ' 💬 Chat ',
+			text: ' 💬  Chat ',
 			side: 'left'
 		} as any,
 		scrollable: true,

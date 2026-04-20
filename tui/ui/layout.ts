@@ -1,5 +1,6 @@
 import blessed from 'blessed';
 import chalk from 'chalk';
+import stringWidth from 'string-width';
 
 import { createChatBox } from '../components/chatbox.js';
 import { createInputBox } from '../components/inputbox.js';
@@ -24,6 +25,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 	const inputBox = createInputBox(screen);
 
 	// Status bar (bottom left, under sidebar)
+	const statusLabel = ' \u26a1  Status ';
 	const statusBar = blessed.box({
 		parent: screen,
 		bottom: 0,
@@ -36,7 +38,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 			fg: '#72767D',
 			border: { fg: '#202225' }
 		},
-		label: { text: ' \u26a1 Status ', side: 'left' } as any,
+		label: { text: statusLabel, side: 'left' } as any,
 		align: 'center',
 		valign: 'middle',
 		content: chalk.hex('#72767D')('Not connected'),
@@ -61,7 +63,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 			coloredLogo,
 			'',
 			chalk.hex('#57F287').bold('  [ Enter ]  ') + chalk.hex('#DCDDDE')('Start chat client'),
-			chalk.hex('#FEE75C').bold('  [  s   ]  ') + chalk.hex('#DCDDDE')('Run setup (save token)'),
+			chalk.hex('#FEE75C').bold('  [  s  ]  ') + chalk.hex('#DCDDDE')('Run setup (save token)'),
 			chalk.hex('#ED4245').bold('  [ Ctrl+C ]  ') + chalk.hex('#DCDDDE')('Exit'),
 			'',
 			chalk.hex('#4F545C')('─'.repeat(46)),
