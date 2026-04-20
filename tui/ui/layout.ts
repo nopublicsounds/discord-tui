@@ -1,13 +1,12 @@
 import blessed from 'blessed';
 import chalk from 'chalk';
-import stringWidth from 'string-width';
+import gradient from 'gradient-string';
 
 import { createChatBox } from '../components/chatbox.js';
 import { createInputBox } from '../components/inputbox.js';
 import { LOGO } from '../components/logo.js';
 import { createSidebar } from '../components/sidebar.js';
 import { createTitleBar, renderTitleBarContent } from '../components/titlebar.js';
-import { createGradientLogo } from '../utils/logoGradient.js';
 
 export type AppLayout = {
 	titleBar: blessed.Widgets.BoxElement;
@@ -45,7 +44,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		tags: false,
 	});
 
-	const coloredLogo = createGradientLogo(LOGO, '#5865F2', '#8458f2', (color, text) => chalk.hex(color)(text));
+	const coloredLogo = gradient(['#5865F2', '#EB459E']).multiline(LOGO);
 	const launcher = blessed.box({
 		parent: screen,
 		top: 'center',
