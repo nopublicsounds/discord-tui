@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { Message, TextChannel, User } from 'discord.js';
 import { renderMessage } from '../utils/messageRenderer.js';
+import { renderDateSeparator } from '../utils/formatters.js';
 import { safeChannelName, safeGuildName } from '../utils/uiText.js';
 import type { UIBridge } from '../ui/types.js';
 
@@ -10,13 +11,25 @@ let activeChannelLoadId = 0;
 async function renderChannelMessages(channelName: string, messages: Message[], ui: Pick<UIBridge, 'clearChat' | 'appendChat'>, currentUser: User | null): Promise<void> {
 	const channelDisplayName = safeChannelName(channelName);
 	ui.clearChat();
-	ui.appendChat(chalk.green(`✓ Joined #${channelDisplayName}`));
 	ui.appendChat('');
-	ui.appendChat(chalk.yellow('--- Recent messages ---'));
+	ui.appendChat(chalk.hex('#5865F2').bold(`  # ${channelDisplayName}`));
+	ui.appendChat(chalk.hex('#72767D')(`  Welcome to #${channelDisplayName}!`));
+	ui.appendChat('');
 
 	let lastAuthorId: string | null = null;
 	let lastMessageTimestamp: number | null = null;
+	let lastDateStr: string | null = null;
+
 	for (const message of messages) {
+		const msgDate = new Date(message.createdTimestamp).toDateString();
+		if (msgDate !== lastDateStr) {
+			ui.appendChat('');
+			ui.appendChat(renderDateSeparator(message.createdTimestamp));
+			ui.appendChat('');
+			lastDateStr = msgDate;
+			lastAuthorId = null;
+			lastMessageTimestamp = null;
+		}
 		await renderMessage(message, ui, true, currentUser, lastAuthorId, lastMessageTimestamp);
 		lastAuthorId = message.author.id;
 		lastMessageTimestamp = message.createdTimestamp;

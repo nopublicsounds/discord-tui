@@ -38,12 +38,18 @@ const commandDefinitions: CommandDefinition[] = [
 ];
 
 function renderHelp(ui: UIBridge): void {
-	ui.appendChat(chalk.yellow('--- Commands ---'));
+	ui.appendChat('');
+	ui.appendChat(chalk.hex('#5865F2').bold('  ✦ Commands'));
+	ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 
 	for(const command of commandDefinitions){
-		ui.appendChat(chalk.cyan(command.usage) + ` - ${command.description}`);
+		ui.appendChat(
+			chalk.hex('#7289DA').bold(`  ${command.usage.padEnd(24)}`) +
+			chalk.hex('#B9BBBE')(command.description)
+		);
 	}
 
+	ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 	ui.appendChat('');
 }
 
