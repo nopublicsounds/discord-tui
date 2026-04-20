@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { Message, User } from 'discord.js';
 import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
+import { renderDiscordMarkdown } from './markdownRenderer.js';
 import type { UIBridge } from '../ui/types.js';
 
 const GROUP_WINDOW_MS = 3 * 60 * 1000;
@@ -73,8 +74,9 @@ export async function renderMessage(
 
 	if(message.content){
 		const highlightedContent = highlightMentions(message.content, message, currentUser);
+		const rendered = renderDiscordMarkdown(highlightedContent);
 		const messageStatus = getMessageStatus(message);
-		ui.appendChat(`${highlightedContent}${messageStatus}`);
+		ui.appendChat(`${rendered}${messageStatus}`);
 	}
 
 	if(message.attachments?.size > 0){
