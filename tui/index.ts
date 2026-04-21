@@ -44,9 +44,18 @@ let mentionChannels = new Set<string>();
 let launcherLocked = false;
 
 function updateSidebarWithUnreads(): void {
+	const selectedIndex = ui.getSidebarSelectedIndex();
 	const model = buildSidebarModel(client, unreadChannels, mentionChannels);
 	channelMap = model.channelMap;
 	ui.setSidebarItems(model.items);
+
+	if (selectedIndex >= 0 && selectedIndex < model.items.length) {
+		ui.selectSidebar(selectedIndex);
+	}
+	else if (model.firstChannelIndex !== undefined) {
+		ui.selectSidebar(model.firstChannelIndex);
+	}
+
 	ui.render();
 }
 
