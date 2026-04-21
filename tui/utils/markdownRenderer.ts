@@ -1,8 +1,8 @@
 import { marked } from 'marked';
-import { markedTerminal } from 'marked-terminal';
+import TerminalRenderer from 'marked-terminal';
 import chalk from 'chalk';
 
-marked.use(markedTerminal({
+const terminalRenderer = new TerminalRenderer({
 	code: chalk.bgHex('#2F3136').hex('#E8912D'),
 	codespan: chalk.bgHex('#2F3136').hex('#E8912D'),
 	blockquote: chalk.hex('#B9BBBE').italic,
@@ -18,7 +18,42 @@ marked.use(markedTerminal({
 	showSectionPrefix: false,
 	reflowText: false,
 	width: 80,
-}) as any);
+}) as any;
+
+terminalRenderer.link = function (href: unknown, title?: string, text?: string): string {
+	let resolvedHref = href;
+	let resolvedText = text;
+
+	if (typeof resolvedHref === 'object' && resolvedHref !== null) {
+		const linkToken = resolvedHref as {
+			href?: string;
+			title?: string;
+			tokens?: unknown[];
+		};
+		title = linkToken.title;
+		resolvedText = linkToken.tokens ? this.parser.parseInline(linkToken.tokens) : resolvedText;
+		resolvedHref = linkToken.href;
+	}
+
+	const normalizedHref = typeof resolvedHref === 'string' ? resolvedHref : '';
+	const normalizedText = (resolvedText && resolvedText !== normalizedHref)
+		? String(resolvedText)
+		: normalizedHref;
+
+	if (!normalizedText) {
+		return '';
+	}
+
+	if (!normalizedHref || normalizedText === normalizedHref) {
+		return this.o.link(this.o.href(this.emoji(normalizedText)));
+	}
+
+	const visibleText = this.o.href(this.emoji(normalizedText));
+	const visibleHref = chalk.dim(` (${normalizedHref})`);
+	return this.o.link(`${visibleText}${visibleHref}`);
+};
+
+marked.setOptions({ renderer: terminalRenderer });
 
 function preprocess(text: string): string {
 	let result = text;
