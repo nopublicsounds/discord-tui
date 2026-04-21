@@ -24,8 +24,8 @@ function highlightMentions(content: string, message: Message, currentUser: User 
 		const pattern = new RegExp(`<@!?${user.id}>`, 'g');
 		const isCurrentUser = currentUser && user.id === currentUser.id;
 		const display = isCurrentUser
-			? chalk.bgYellow.black(`@${user.username}`)
-			: chalk.yellow(`@${user.username}`);
+			? chalk.bgHex('#F0B232').black(` @${user.username} `)
+			: chalk.bgHex('#5865F2').hex('#FFFFFF')(` @${user.username} `);
 		result = result.replace(pattern, display);
 	});
 
