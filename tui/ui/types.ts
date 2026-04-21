@@ -13,10 +13,14 @@ export interface UIBridge {
 
 	clearInput(): void;
 	getInputValue(): string;
+	setInputValue(value: string): void;
 	focusInput(): void;
 	focusSidebar(): void;
 	setInputLabel(label: string): void;
 	setInputBorderColor(color: string): void;
+	showMentionSuggestions(items: string[], selectedIndex: number): void;
+	hideMentionSuggestions(): void;
+	isMentionSuggestionsVisible(): boolean;
 
 	setSidebarItems(items: string[]): void;
 	selectSidebar(index: number): void;

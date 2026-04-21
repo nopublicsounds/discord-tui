@@ -4,6 +4,7 @@ import gradient from 'gradient-string';
 
 import { createChatBox } from '../components/chatbox.js';
 import { createInputBox } from '../components/inputbox.js';
+import { createMentionBox } from '../components/mentionBox.js';
 import { LOGO } from '../components/logo.js';
 import { createSidebar } from '../components/sidebar.js';
 import { createTitleBar, renderTitleBarContent } from '../components/titlebar.js';
@@ -13,6 +14,7 @@ export type AppLayout = {
 	sidebar: blessed.Widgets.ListElement;
 	chatBox: blessed.Widgets.Log;
 	inputBox: blessed.Widgets.TextboxElement;
+	mentionBox: blessed.Widgets.BoxElement;
 	statusBar: blessed.Widgets.BoxElement;
 	launcher: blessed.Widgets.BoxElement;
 };
@@ -22,6 +24,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 	const sidebar = createSidebar(screen);
 	const chatBox = createChatBox(screen);
 	const inputBox = createInputBox(screen);
+	const mentionBox = createMentionBox(screen);
 
 	// Status bar (bottom left, under sidebar)
 	const statusLabel = ' \u26a1  Status ';
@@ -71,13 +74,14 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		].join('\n')
 	});
 
-	hideChatUI({ titleBar, sidebar, chatBox, inputBox, statusBar, launcher });
+	hideChatUI({ titleBar, sidebar, chatBox, inputBox, mentionBox, statusBar, launcher });
 
 	return {
 		titleBar,
 		sidebar,
 		chatBox,
 		inputBox,
+		mentionBox,
 		statusBar,
 		launcher
 	};
@@ -89,6 +93,7 @@ export function showChatUI(layout: AppLayout): void {
 	layout.sidebar.show();
 	layout.chatBox.show();
 	layout.inputBox.show();
+	layout.mentionBox.hide();
 	layout.statusBar.show();
 }
 
@@ -96,6 +101,7 @@ export function hideChatUI(layout: AppLayout): void {
 	layout.sidebar.hide();
 	layout.chatBox.hide();
 	layout.inputBox.hide();
+	layout.mentionBox.hide();
 	layout.statusBar.hide();
 }
 

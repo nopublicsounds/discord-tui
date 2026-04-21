@@ -1,4 +1,5 @@
 import type blessed from 'blessed';
+import chalk from 'chalk';
 
 import { createAppLayout, hideChatUI, renderTitleBarContent, showChatUI } from './layout.js';
 import type { KeyHandler, UIBridge } from './types.js';
@@ -59,6 +60,10 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 			return layout.inputBox.getValue();
 		},
 
+		setInputValue(value: string): void {
+			layout.inputBox.setValue(value);
+		},
+
 		focusInput(): void {
 			layout.inputBox.focus();
 		},
@@ -73,6 +78,26 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 
 		setInputBorderColor(color: string): void {
 			layout.inputBox.style.border.fg = color;
+		},
+
+		showMentionSuggestions(items: string[], selectedIndex: number): void {
+			const rendered = items.map((item, index) => {
+				if (index === selectedIndex) {
+					return chalk.bgHex('#5865F2').hex('#FFFFFF')(` ${item} `);
+				}
+				return chalk.hex('#DCDDDE')(` ${item}`);
+			});
+			layout.mentionBox.setContent(rendered.join('\n'));
+			layout.mentionBox.show();
+		},
+
+		hideMentionSuggestions(): void {
+			layout.mentionBox.hide();
+			layout.mentionBox.setContent('');
+		},
+
+		isMentionSuggestionsVisible(): boolean {
+			return !layout.mentionBox.hidden;
 		},
 
 		setSidebarItems(items: string[]): void {

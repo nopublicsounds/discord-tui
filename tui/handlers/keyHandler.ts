@@ -10,7 +10,8 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	'render' |
 	'focusInput' |
 	'getInputValue' |
-	'setInputBorderColor'
+	'setInputBorderColor' |
+	'isMentionSuggestionsVisible'
 >){
 	const scrollChat = (delta: number): void => {
 		ui.scrollChat(delta);
@@ -27,10 +28,16 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	});
 
 	ui.onInputKey(['up'], () => {
+		if (ui.isMentionSuggestionsVisible()) {
+			return;
+		}
 		scrollChat(-1);
 	});
 
 	ui.onInputKey(['down'], () => {
+		if (ui.isMentionSuggestionsVisible()) {
+			return;
+		}
 		scrollChat(1);
 	});
 
