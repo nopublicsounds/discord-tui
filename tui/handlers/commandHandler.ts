@@ -88,14 +88,17 @@ const commands: Record<string, CommandHandler> = {
 		}
 		
 		if(candidates.length > 1 && !serverName){
-			ui.appendChat(chalk.yellow(`Found ${candidates.length} channels named #${channelName}:`));
+			ui.appendChat('');
+			ui.appendChat(chalk.hex('#5865F2').bold('  ✦ Multiple matches'));
+			ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 			candidates.forEach(({ channel }, i) => {
 				ui.appendChat(
-					chalk.cyan(`  ${i + 1}. #${safeChannelName(channel.name)}`) +
-					chalk.gray(` in ${safeGuildName(channel.guild.name)}`)
+					chalk.hex('#7289DA').bold(`  ${(i + 1) + '. #' + safeChannelName(channel.name)}`) +
+					chalk.hex('#B9BBBE')(` in ${safeGuildName(channel.guild.name)}`)
 				);
 			});
-			ui.appendChat(chalk.yellow(`Use: /goto #${channelName} <server>`));
+			ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
+			ui.appendChat(chalk.hex('#B9BBBE')(`  Use: /goto #${channelName} <server>`));
 			ui.render();
 			return;
 		}
@@ -122,25 +125,28 @@ const commands: Record<string, CommandHandler> = {
 		const dnd = members.filter(m => m.presence?.status === 'dnd');
 		const offline = members.filter(m => !m.presence || m.presence.status === 'offline');
 
-		ui.appendChat(chalk.yellow(`--- Members (${members.size}) ---`));
+		ui.appendChat('');
+		ui.appendChat(chalk.hex('#5865F2').bold(`  ✦ Members (${members.size})`));
+		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 
 		if(online.size > 0){
-			ui.appendChat(chalk.green(`🍀 Online (${online.size})`));
-			online.forEach(m => ui.appendChat(`  ${m.user.username}`));
+			ui.appendChat(chalk.hex('#43B581').bold(`  ● Online (${online.size})`));
+			online.forEach(m => ui.appendChat(chalk.hex('#B9BBBE')(`    ${m.user.username}`)));
 		}
 		if(idle.size > 0){
-			ui.appendChat(chalk.yellow(`🌙 Idle (${idle.size})`));
-			idle.forEach(m => ui.appendChat(`  ${m.user.username}`));
+			ui.appendChat(chalk.hex('#FAA61A').bold(`  ◐ Idle (${idle.size})`));
+			idle.forEach(m => ui.appendChat(chalk.hex('#B9BBBE')(`    ${m.user.username}`)));
 		}
 		if(dnd.size > 0){
-			ui.appendChat(chalk.red(`⛔ DND (${dnd.size})`));
-			dnd.forEach(m => ui.appendChat(`  ${m.user.username}`));
+			ui.appendChat(chalk.hex('#F04747').bold(`  ⊖ DND (${dnd.size})`));
+			dnd.forEach(m => ui.appendChat(chalk.hex('#B9BBBE')(`    ${m.user.username}`)));
 		}
 		if(offline.size > 0){
-			ui.appendChat(chalk.gray(`⚫ Offline (${offline.size})`));
-			offline.forEach(m => ui.appendChat(`  ${m.user.username}`));
+			ui.appendChat(chalk.hex('#747F8D').bold(`  ○ Offline (${offline.size})`));
+			offline.forEach(m => ui.appendChat(chalk.hex('#4F545C')(`    ${m.user.username}`)));
 		}
 
+		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 		ui.appendChat('');
 		ui.render();
 	},
@@ -185,8 +191,9 @@ const commands: Record<string, CommandHandler> = {
 			ui.clearChat();
 			ui.setChatLabel(` DM - ${targetUser.username} `);
 			ui.setInputLabel(` @ ${targetUser.username} `);
-			ui.appendChat(chalk.green(`✓ DM with ${chalk.cyan(targetUser.username)}`));
-			ui.appendChat(chalk.yellow('--- Recent messages ---'));
+			ui.appendChat('');
+			ui.appendChat(chalk.hex('#5865F2').bold(`  ✦ DM — ${targetUser.username}`));
+			ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 
 			const messages = await dmChannel.messages.fetch({ limit: 10 });
 			const messagesArray = Array.from(messages.values()).reverse();
@@ -217,7 +224,7 @@ const commands: Record<string, CommandHandler> = {
 			ui.setChatLabel(' Chat ');
 			ui.setInputLabel(' No channel selected ');
 		}
-		ui.appendChat(chalk.gray('--- DM closed ---'));
+		ui.appendChat(chalk.hex('#4F545C')('  DM closed'));
 		ui.render();
 	},
 
@@ -228,10 +235,16 @@ const commands: Record<string, CommandHandler> = {
 			return;
 		}
 
-		ui.appendChat(chalk.yellow('--- Open DM Channels ---'));
+		ui.appendChat('');
+		ui.appendChat(chalk.hex('#5865F2').bold('  ✦ Open DM Channels'));
+		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 		dmChannelCache.forEach((_, username) => {
-			ui.appendChat(chalk.cyan(`  /dmopen ${username}`));
+			ui.appendChat(
+				chalk.hex('#7289DA').bold(`  /dmopen`) +
+				chalk.hex('#B9BBBE')(` ${username}`)
+			);
 		});
+		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 		ui.appendChat('');
 		ui.render();
 	}
