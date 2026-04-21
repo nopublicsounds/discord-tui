@@ -11,6 +11,14 @@ import { setupSidebarHandlers } from './handlers/sidebarHandler.js';
 import { runSetup } from './setup.js';
 import { createBlessedUIBridge } from './ui/blessedBridge.js';
 import { buildSidebarModel } from './utils/channelList.js';
+import { showLauncher } from './ui/launcher.js';
+
+const launcherResult = await showLauncher();
+
+if (launcherResult === 'setup') {
+	await runSetup();
+	process.exit(0);
+}
 
 const client = new Client({
 	intents: [
@@ -41,7 +49,6 @@ let currentDMChannel: DMChannel | null = null;
 let channelMap = new Map<number, TextChannel>();
 let unreadChannels = new Set<string>();
 let mentionChannels = new Set<string>();
-let launcherLocked = false;
 
 function updateSidebarWithUnreads(): void {
 	const selectedIndex = ui.getSidebarSelectedIndex();
@@ -103,31 +110,13 @@ client.once(Events.ClientReady, () => {
 	ui.render();
 });
 
-function startChatClient(): void {
-	ui.showChatUI();
-	ui.setTitleBar(null, null, 'connecting');
-	ui.setChatContent(chalk.hex('#99AAB5')('Connecting to Discord...'));
-	ui.render();
-	void client.login(process.env.DISCORD_TOKEN).catch(err => {
-		ui.setTitleBar(null, null, 'disconnected');
-		ui.setChatContent(chalk.hex('#FF0000')(`Failed to connect: ${err.message}`));
-		ui.render();
-	});
-}
-
-ui.onGlobalKey(['enter'], () => {
-	if (launcherLocked) return;
-	launcherLocked = true;
-	startChatClient();
-});
-
-ui.onGlobalKey(['s'], async () => {
-	if (launcherLocked) return;
-	launcherLocked = true;
-	screen.destroy();
-	await runSetup();
-	process.exit(0);
-});
-
-ui.focusSidebar();
+ui.showChatUI();
+ui.setTitleBar(null, null, 'connecting');
+ui.setChatContent(chalk.hex('#99AAB5')('Connecting to Discord...'));
 ui.render();
+
+void client.login(process.env.DISCORD_TOKEN).catch(err => {
+	ui.setTitleBar(null, null, 'disconnected');
+	ui.setChatContent(chalk.hex('#FF0000')(`Failed to connect: ${err.message}`));
+	ui.render();
+});

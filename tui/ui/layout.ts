@@ -1,11 +1,9 @@
 import blessed from 'blessed';
 import chalk from 'chalk';
-import gradient from 'gradient-string';
 
 import { createChatBox } from '../components/chatbox.js';
 import { createInputBox } from '../components/inputbox.js';
 import { createMentionBox } from '../components/mentionBox.js';
-import { LOGO } from '../components/logo.js';
 import { createSidebar } from '../components/sidebar.js';
 import { createTitleBar, renderTitleBarContent } from '../components/titlebar.js';
 
@@ -16,7 +14,6 @@ export type AppLayout = {
 	inputBox: blessed.Widgets.TextboxElement;
 	mentionBox: blessed.Widgets.BoxElement;
 	statusBar: blessed.Widgets.BoxElement;
-	launcher: blessed.Widgets.BoxElement;
 };
 
 export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
@@ -47,34 +44,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		tags: false,
 	});
 
-	const coloredLogo = gradient(['#5865F2', '#EB459E']).multiline(LOGO);
-	const launcher = blessed.box({
-		parent: screen,
-		top: 'center',
-		left: 'center',
-		width: 'shrink',
-		height: 'shrink',
-		align: 'center',
-		valign: 'middle',
-		style: {
-			bg: '#2F3136',
-		},
-		padding: { left: 4, right: 4, top: 1, bottom: 1 },
-		border: { type: 'line' },
-		content: [
-			coloredLogo,
-			'',
-			chalk.hex('#57F287').bold('  [ Enter ]  ') + chalk.hex('#DCDDDE')('Start chat client'),
-			chalk.hex('#FEE75C').bold('  [  s  ]  ') + chalk.hex('#DCDDDE')('Run setup (save token)'),
-			chalk.hex('#ED4245').bold('  [ Ctrl+C ]  ') + chalk.hex('#DCDDDE')('Exit'),
-			'',
-			chalk.hex('#4F545C')('─'.repeat(46)),
-			chalk.hex('#72767D')('  ↑/↓  Scroll  •  PgUp/PgDn  Fast scroll'),
-			chalk.hex('#72767D')('  Ctrl+D  Switch focus  •  /help  Commands'),
-		].join('\n')
-	});
-
-	hideChatUI({ titleBar, sidebar, chatBox, inputBox, mentionBox, statusBar, launcher });
+	hideChatUI({ titleBar, sidebar, chatBox, inputBox, mentionBox, statusBar });
 
 	return {
 		titleBar,
@@ -83,12 +53,10 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		inputBox,
 		mentionBox,
 		statusBar,
-		launcher
 	};
 }
 
 export function showChatUI(layout: AppLayout): void {
-	layout.launcher.hide();
 	layout.titleBar.show();
 	layout.sidebar.show();
 	layout.chatBox.show();
