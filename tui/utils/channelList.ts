@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { ChannelType, Client, TextChannel } from 'discord.js';
 import stringWidth from 'string-width';
 import { safeChannelName, safeGuildName } from './uiText.js';
@@ -8,14 +9,24 @@ export type SidebarModel = {
 	firstChannelIndex: number | undefined;
 };
 
-export function buildSidebarModel(client: Client): SidebarModel {
+const ANSI_ESCAPE_PATTERN = /\u001B\[[0-?]*[ -/]*[@-~]/g;
+
+function stripAnsiCodes(text: string): string {
+	return text.replace(ANSI_ESCAPE_PATTERN, '');
+}
+
+export function buildSidebarModel(
+	client: Client,
+	unreadChannels: Set<string> = new Set(),
+	mentionChannels: Set<string> = new Set()
+): SidebarModel {
 	const sidebarItems: string[] = [];
 	const channelMap = new Map<number, TextChannel>();
 	let itemIndex = 0;
 	const targetWidth = 20; // 고정 너비 설정
 
 	const padItem = (item: string): string => {
-		const width = stringWidth(item);
+		const width = stringWidth(stripAnsiCodes(item));
 		const padding = ' '.repeat(Math.max(0, targetWidth - width));
 		return item + padding;
 	};
@@ -31,7 +42,19 @@ export function buildSidebarModel(client: Client): SidebarModel {
 		}
 
 		textChannels.forEach((channel) => {
-			sidebarItems.push(padItem(`     # ${safeChannelName(channel.name)}`));
+			const hasMention = mentionChannels.has(channel.id);
+			const hasUnread = unreadChannels.has(channel.id);
+			const unreadMark = hasMention
+				? chalk.redBright.bold.inverse('◆')
+				: hasUnread
+					? chalk.whiteBright.bold('●')
+					: ' ';
+			const channelLabel = hasMention
+				? chalk.redBright.bold.inverse(`# ${safeChannelName(channel.name)}`)
+				: hasUnread
+					? chalk.whiteBright.bold(`# ${safeChannelName(channel.name)}`)
+					: `# ${safeChannelName(channel.name)}`;
+			sidebarItems.push(padItem(`   ${unreadMark} ${channelLabel}`));
 			channelMap.set(itemIndex, channel as TextChannel);
 			itemIndex++;
 		});

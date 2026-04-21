@@ -12,7 +12,8 @@ export function setupMessageHandlers(
 	getCurrentChannel: () => TextChannel | null,
 	setCurrentChannel: (channel: TextChannel) => void,
 	getCurrentDMChannel: () => DMChannel | null,
-	setCurrentDMChannel: (channel: DMChannel | null) => void
+	setCurrentDMChannel: (channel: DMChannel | null) => void,
+	markChannelAsUnread: (channelId: string, isMention: boolean) => void
 ) {
 	const resetInput = (): void => {
 		ui.clearInput();
@@ -92,6 +93,15 @@ export function setupMessageHandlers(
 			lastAuthorMap.set(currentChannel.id, message.author.id);
 			lastTimestampMap.set(currentChannel.id, message.createdTimestamp);
 			ui.render();
+		} else {
+			// Mark channel as unread if message is received in a different channel
+			if (message.channel.type === 0) { // Text channel
+				const isMention = Boolean(
+					client.user
+					&& (message.mentions.users.has(client.user.id) || message.mentions.everyone)
+				);
+				markChannelAsUnread(message.channel.id, isMention);
+			}
 		}
 	});
 

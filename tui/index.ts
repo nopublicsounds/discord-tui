@@ -39,7 +39,30 @@ const ui = createBlessedUIBridge(screen);
 let currentChannel: TextChannel | null = null;
 let currentDMChannel: DMChannel | null = null;
 let channelMap = new Map<number, TextChannel>();
+let unreadChannels = new Set<string>();
+let mentionChannels = new Set<string>();
 let launcherLocked = false;
+
+function updateSidebarWithUnreads(): void {
+	const model = buildSidebarModel(client, unreadChannels, mentionChannels);
+	channelMap = model.channelMap;
+	ui.setSidebarItems(model.items);
+	ui.render();
+}
+
+function markChannelAsUnread(channelId: string, isMention: boolean): void {
+	unreadChannels.add(channelId);
+	if (isMention) {
+		mentionChannels.add(channelId);
+	}
+	updateSidebarWithUnreads();
+}
+
+function markChannelAsRead(channelId: string): void {
+	unreadChannels.delete(channelId);
+	mentionChannels.delete(channelId);
+	updateSidebarWithUnreads();
+}
 
 setupKeyBindings(ui);
 setupMessageHandlers(
@@ -47,16 +70,18 @@ setupMessageHandlers(
 	() => currentChannel,
 	(channel) => { currentChannel = channel; },
 	() => currentDMChannel,
-	(channel) => { currentDMChannel = channel; }
+	(channel) => { currentDMChannel = channel; },
+	markChannelAsUnread
 );
 
 client.once(Events.ClientReady, () => {
-	const model = buildSidebarModel(client);
+	const model = buildSidebarModel(client, unreadChannels, mentionChannels);
 	channelMap = model.channelMap;
 	ui.setSidebarItems(model.items);
 
 	setupSidebarHandlers(ui, channelMap, model.items.length, async (channel) => {
 		currentChannel = channel;
+		markChannelAsRead(channel.id);
 		await handleChannelSelect(channel, ui, client.user);
 	});
 
