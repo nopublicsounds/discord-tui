@@ -76,7 +76,7 @@ export async function handleChannelSelect(
 		ui.setTitleBar(guildDisplayName, channelDisplayName, 'disconnected');
 		ui.setStatusBar(chalk.hex('#ED4245')(`Failed to load #${channelDisplayName}`));
 		ui.clearChat();
-		ui.appendChat(chalk.red('Failed to load messages'));
+		ui.appendChat(chalk.hex('#ED4245')('  ⊗ Failed to load messages'));
 	}
 
 	ui.render();

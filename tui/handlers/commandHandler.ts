@@ -60,8 +60,8 @@ const commands: Record<string, CommandHandler> = {
 
 	goto: async (args, { client, ui, channelMap, setCurrentChannel }) => {
 		if(args.length === 0){
-			ui.appendChat(chalk.yellow('Example: /goto #general'));
-			ui.appendChat(chalk.yellow('Example: /goto #general MyServer'));
+			ui.appendChat(chalk.hex('#FAA61A')('  Usage:') + chalk.hex('#B9BBBE')('  /goto #general'));
+			ui.appendChat(chalk.hex('#B9BBBE')('         /goto #general <server>'));
 			ui.render();
 			return;
 		}
@@ -82,7 +82,7 @@ const commands: Record<string, CommandHandler> = {
 		}
 
 		if (candidates.length === 0) {
-			ui.appendChat(chalk.red(`Channel not found: #${channelName}`));
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ Channel not found: ') + chalk.hex('#B9BBBE')(`#${channelName}`));
 			ui.render();
 			return;
 		}
@@ -115,7 +115,7 @@ const commands: Record<string, CommandHandler> = {
 	members: async (args, { ui, getCurrentChannel }) => {
 		const currentChannel = getCurrentChannel();
 		if(!currentChannel){
-			ui.appendChat(chalk.red('No channel selected!'));
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ No channel selected'));
 			return;
 		}
 
@@ -172,8 +172,8 @@ const commands: Record<string, CommandHandler> = {
 
 	dmopen: async(args, { client, ui, setCurrentDMChannel }) => {
 		if(args.length < 1){
-			ui.appendChat(chalk.yellow('Usage: /dmopen <username>'));
-			ui.appendChat(chalk.yellow('Example: /dmopen Alice'));
+			ui.appendChat(chalk.hex('#FAA61A')('  Usage:') + chalk.hex('#B9BBBE')('  /dmopen <username>'));
+			ui.appendChat(chalk.hex('#B9BBBE')('         /dmopen Alice'));
 			ui.render();
 			return;
 		}
@@ -208,7 +208,7 @@ const commands: Record<string, CommandHandler> = {
 			setCurrentDMChannel(dmChannel);
 		}
 		catch(error){
-			ui.appendChat(chalk.red(`Failed to open DM with ${targetUsername}: ${(error as Error).message}`));
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ Failed to open DM: ') + chalk.hex('#B9BBBE')((error as Error).message));
 		}
 
 		ui.render();
@@ -230,7 +230,7 @@ const commands: Record<string, CommandHandler> = {
 
 	dms: (_, { ui }) => {
 		if(dmChannelCache.size === 0){
-			ui.appendChat(chalk.yellow('No open DM channels. Use /dmopen <username> to start one.'));
+			ui.appendChat(chalk.hex('#B9BBBE')('  No open DM channels.') + chalk.hex('#4F545C')('  /dmopen <username>'));
 			ui.render();
 			return;
 		}
@@ -259,7 +259,7 @@ export async function executeCommandByName(commandName: string, args: string[], 
 	const handler = commands[normalizedName];
 
 	if(!handler){
-		ctx.ui.appendChat(chalk.red(`Unknown command: /${commandName}  (type /help)`));
+		ctx.ui.appendChat(chalk.hex('#ED4245')('  ⊗ Unknown command: ') + chalk.hex('#B9BBBE')(`/${commandName}`) + chalk.hex('#4F545C')('  — type /help'));
 		ctx.ui.render();
 		return false;
 	}
@@ -275,7 +275,7 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
 
 	const parsed = input.slice(1).trim();
 	if(!parsed){
-		ctx.ui.appendChat(chalk.yellow('Empty command. Type /help'));
+		ctx.ui.appendChat(chalk.hex('#FAA61A')('  Empty command.') + chalk.hex('#4F545C')('  Type /help'));
 		ctx.ui.render();
 		return true;
 	}
@@ -293,7 +293,7 @@ export async function sendToDMChannel(dmChannel: DMChannel, content: string, ui:
 		ui.appendChat(chalk.gray(`[${time}]`) + ' ' + chalk.green('You') + ': ' + content);
 	}
 	catch(error){
-		ui.appendChat(chalk.red(`Failed to send message: ${(error as Error).message}`));
+		ui.appendChat(chalk.hex('#ED4245')('  ⊗ Failed to send: ') + chalk.hex('#B9BBBE')((error as Error).message));
 	}
 }
 
@@ -323,7 +323,7 @@ async function findUserByUsername(client: Client, username: string, ui: UIBridge
 		}
 	}
 
-	ui.appendChat(chalk.red(`User not found: ${username}`));
+	ui.appendChat(chalk.hex('#ED4245')('  ⊗ User not found: ') + chalk.hex('#B9BBBE')(username));
 	ui.render();
 	return null;
 }

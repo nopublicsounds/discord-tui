@@ -119,7 +119,7 @@ export function setupMessageHandlers(
 				resetInput();
 			}
 			catch(error){
-				ui.appendChat(chalk.red(`Failed to send DM: ${error}`));
+				ui.appendChat(chalk.hex('#ED4245')('  ⊗ Failed to send DM: ') + chalk.hex('#B9BBBE')(`${error}`));
 				resetInput();
 			}
 			return;
@@ -127,7 +127,7 @@ export function setupMessageHandlers(
 		
 		const currentChannel = getCurrentChannel();
 		if(!currentChannel){
-			ui.appendChat(chalk.red('No channel selected!'));
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ No channel selected'));
 			resetInput();
 			return;
 		}
@@ -142,7 +142,7 @@ export function setupMessageHandlers(
 		}
 		
 		catch(error){
-			ui.appendChat(chalk.red(`Failed to send message: ${error}`));
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ Failed to send: ') + chalk.hex('#B9BBBE')(`${error}`));
 			resetInput();
 		}
 	});
