@@ -1,7 +1,9 @@
 import chalk from 'chalk';
 
 import { handleCommand } from './commandHandler.js';
+import { handleChannelSelect } from './channelHandler.js';
 import { Client, DMChannel, Events, Message, TextChannel } from 'discord.js';
+import type { PartialMessage } from 'discord.js';
 import type { UIBridge } from '../ui/types.js';
 import { renderMessage } from '../utils/messageRenderer.js';
 import { resolveMentionsForSend } from '../utils/mentionResolver.js';
@@ -172,7 +174,51 @@ export function setupMessageHandlers(
 		getCurrentDMChannel,
 		setCurrentDMChannel,
 	};
-	
+
+	const reloadCurrentDMChannel = async (dmChannel: DMChannel): Promise<void> => {
+		ui.clearChat();
+		ui.appendChat('');
+		ui.appendChat(chalk.hex('#5865F2').bold(`  ✦ DM — ${dmChannel.recipient?.username ?? 'Unknown'}`));
+		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
+		const messages = await dmChannel.messages.fetch({ limit: 50 });
+		const messagesArray = Array.from(messages.values()).reverse();
+		let lastAuthorId: string | null = null;
+		let lastMessageTimestamp: number | null = null;
+		for (const msg of messagesArray) {
+			await renderMessage(msg, ui, true, client.user ?? null, lastAuthorId, lastMessageTimestamp);
+			lastAuthorId = msg.author.id;
+			lastMessageTimestamp = msg.createdTimestamp;
+		}
+		if (lastAuthorId) lastAuthorMap.set(dmChannel.id, lastAuthorId);
+		if (lastMessageTimestamp) lastTimestampMap.set(dmChannel.id, lastMessageTimestamp);
+		ui.render();
+	};
+
+	const handleMessageMutation = async (message: Message | PartialMessage): Promise<void> => {
+		const currentChannel = getCurrentChannel();
+		if (currentChannel && message.channel.id === currentChannel.id) {
+			lastAuthorMap.delete(currentChannel.id);
+			lastTimestampMap.delete(currentChannel.id);
+			await handleChannelSelect(currentChannel, ui, client.user ?? null);
+			ui.render();
+			return;
+		}
+		const currentDMChannel = getCurrentDMChannel();
+		if (currentDMChannel && message.channel.id === currentDMChannel.id) {
+			lastAuthorMap.delete(currentDMChannel.id);
+			lastTimestampMap.delete(currentDMChannel.id);
+			await reloadCurrentDMChannel(currentDMChannel);
+		}
+	};
+
+	client.on(Events.MessageUpdate, async (_oldMessage, newMessage) => {
+		await handleMessageMutation(newMessage);
+	});
+
+	client.on(Events.MessageDelete, async (message) => {
+		await handleMessageMutation(message);
+	});
+
 	client.on(Events.MessageCreate, async (message: Message) => {
 		if(message.author.id === client.user?.id) return;
 
