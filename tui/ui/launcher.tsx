@@ -33,15 +33,15 @@ function LauncherApp({ onDone }: { onDone: (result: LauncherResult) => void }) {
 			</Box>
 			<Text> </Text>
 			<Text>
-				<Text color="#57F287" bold>{'  [ Enter ]  '}</Text>
+				<Text color="#57F287" bold>{'  [ Enter ]  	'}</Text>
 				<Text color="#DCDDDE">Start chat client</Text>
 			</Text>
 			<Text>
-				<Text color="#FEE75C" bold>{'  [  s  ]  '}</Text>
+				<Text color="#FEE75C" bold>{'  [  s  ]  	'}</Text>
 				<Text color="#DCDDDE">Run setup (save token)</Text>
 			</Text>
 			<Text>
-				<Text color="#ED4245" bold>{'  [ Ctrl+C ]  '}</Text>
+				<Text color="#ED4245" bold>{'  [ Ctrl+C ]  	'}</Text>
 				<Text color="#DCDDDE">Exit</Text>
 			</Text>
 			<Text> </Text>
