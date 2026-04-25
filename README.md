@@ -26,7 +26,8 @@ npm run dev
 **Production Mode** (build first, then run):
 ```bash
 npm run build
-npm start
+npm link
+discord-tui
 ```
 
 The launcher screen will appear. Press `s` to enter setup and paste your Discord bot token.
