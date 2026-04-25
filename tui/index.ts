@@ -13,11 +13,14 @@ import { runSetup } from './setup.js';
 import { createBlessedUIBridge } from './ui/blessedBridge.js';
 import { buildSidebarModel } from './utils/channelList.js';
 import { showLauncher } from './ui/launcher.js';
+import { clear } from 'console';
 
 const launcherResult = await showLauncher();
+const keepAlive = setInterval(() => {}, 1000);
 
 if (launcherResult === 'setup') {
 	await runSetup();
+	clearInterval(keepAlive);
 	process.exit(0);
 }
 
@@ -92,6 +95,7 @@ setupMessageHandlers(
 );
 
 client.once(Events.ClientReady, () => {
+	clearInterval(keepAlive);
 	const model = buildSidebarModel(client, unreadChannels, mentionChannels);
 	channelMap = model.channelMap;
 	ui.setSidebarItems(model.items);
