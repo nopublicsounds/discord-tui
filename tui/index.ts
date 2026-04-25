@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import blessed from 'blessed';
 import 'dotenv/config';
 import chalk from 'chalk';
