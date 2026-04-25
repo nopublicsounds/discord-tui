@@ -5,6 +5,14 @@ import { pathToFileURL } from 'url';
 
 export function runSetup(): Promise<void> {
 	return new Promise((resolve) => {
+		const keepAlive = setInterval(() => {}, 1000);
+
+		const done = () => {
+            clearInterval(keepAlive);
+            screen.destroy();
+            resolve();
+        };
+
 		const screen = blessed.screen({
 			smartCSR: true,
 			title: 'Discord TUI Setup',
@@ -119,6 +127,8 @@ export function runSetup(): Promise<void> {
 					resolve();
 				}, 1500);
 			}
+			
+			setTimeout(done, 1500);
 		});
 
 		inputBox.on('cancel', () => {
@@ -128,6 +138,8 @@ export function runSetup(): Promise<void> {
 				screen.destroy();
 				resolve();
 			}, 1000);
+
+			setTimeout(done, 1000);
 		});
 
 		screen.key(['escape', 'q', 'C-c'], () => {
@@ -137,6 +149,8 @@ export function runSetup(): Promise<void> {
 				screen.destroy();
 				resolve();
 			}, 1000);
+
+			setTimeout(done, 1000);
 		});
 
 		screen.render();
