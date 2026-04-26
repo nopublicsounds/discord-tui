@@ -1,7 +1,10 @@
 import blessed from 'blessed';
 import fs from 'fs';
 import chalk from 'chalk';
-import { pathToFileURL } from 'url';
+import { pathToFileURL, fileURLToPath } from 'url';
+import path from 'path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function runSetup(): Promise<void> {
 	return new Promise((resolve) => {
@@ -111,9 +114,11 @@ export function runSetup(): Promise<void> {
 				return;
 			}
 
+			const envPath = path.resolve(__dirname, '..', '..', '.env');
+
 			try {
-				fs.writeFileSync('.env', `DISCORD_TOKEN=${trimmed}\n`);
-				statusBox.setContent(chalk.hex('#00FF00')('✅ .env file created successfully!'));
+				fs.writeFileSync(envPath, `DISCORD_TOKEN=${trimmed}\n`);
+				statusBox.setContent(chalk.hex('#00FF00')(`✅ .env file created at ${envPath}`));
 				screen.render();
 				setTimeout(() => {
 					screen.destroy();
@@ -127,7 +132,7 @@ export function runSetup(): Promise<void> {
 					resolve();
 				}, 1500);
 			}
-			
+
 			setTimeout(done, 1500);
 		});
 

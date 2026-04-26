@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 import blessed from 'blessed';
-import 'dotenv/config';
 import chalk from 'chalk';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 import { Client, DMChannel, GatewayIntentBits, Events, TextChannel } from 'discord.js';
 import { patchBlessedUnicode } from './utils/unicodePatch.js';
