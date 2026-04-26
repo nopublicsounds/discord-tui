@@ -1,6 +1,6 @@
 import { GuildMember, TextChannel } from 'discord.js';
 
-const MENTION_TOKEN_REGEX = /(^|\s)@([^\s@<]+)/g;
+const MENTION_TOKEN_REGEX = /(^|\s)@([^\s@<]+?)(?=[\s@<.,:;!?]|$)/g;
 const RESERVED_MENTIONS = new Set(['everyone', 'here']);
 
 function normalize(value: string): string {

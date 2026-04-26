@@ -72,11 +72,14 @@ export async function renderMessage(
 		ui.appendChat(`${timestamp} ${author}`);
 	}
 
+	const messageStatus = getMessageStatus(message);
 	if(message.content){
 		const highlightedContent = highlightMentions(message.content, message, currentUser);
 		const rendered = renderDiscordMarkdown(highlightedContent);
-		const messageStatus = getMessageStatus(message);
 		ui.appendChat(`${rendered}${messageStatus}`);
+	}
+	else if(messageStatus){
+		ui.appendChat(messageStatus.trim());
 	}
 
 	if(message.attachments?.size > 0){
