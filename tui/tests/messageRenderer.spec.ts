@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { MessageType } from 'discord.js';
 import { renderMessage } from '../utils/messageRenderer.js';
 import type { UIBridge } from '../ui/types.js';
 
@@ -45,6 +46,48 @@ describe('messageRenderer', () => {
     await renderMessage(message, ui, false, null, null, null);
 
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('(message deleted)'));
+  });
+
+  it('renders guild join system messages instead of deleted status', async () => {
+    const ui = createMockUI();
+    const message = {
+      author: { id: '1', username: 'Alice', bot: false },
+      createdTimestamp: 1672531200000,
+      content: '',
+      mentions: { users: new Map() },
+      attachments: new Map(),
+      type: MessageType.UserJoin,
+    } as any;
+
+    await renderMessage(message, ui, false, null, null, null);
+
+    expect(ui.appendChat).not.toHaveBeenCalledWith(expect.stringContaining('(message deleted)'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringMatching(/Alice.*joined the server/));
+  });
+
+  it('renders embeds instead of deleted status when content is missing', async () => {
+    const ui = createMockUI();
+    const message = {
+      author: { id: '1', username: 'Alice', bot: false },
+      createdTimestamp: 1672531200000,
+      content: '',
+      mentions: { users: new Map() },
+      attachments: new Map(),
+      embeds: [
+        {
+          title: 'Sample Embed',
+          description: 'Embed description',
+          fields: [{ name: 'Field', value: 'Value' }],
+          footer: { text: 'Footer text' },
+        },
+      ],
+    } as any;
+
+    await renderMessage(message, ui, false, null, null, null);
+
+    expect(ui.appendChat).not.toHaveBeenCalledWith(expect.stringContaining('(message deleted)'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Sample Embed'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Embed description'));
   });
 
   it('appends image preview fallback when image preview is unavailable', async () => {

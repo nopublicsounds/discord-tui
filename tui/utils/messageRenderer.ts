@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Message, User } from 'discord.js';
+import { Message, MessageType, User } from 'discord.js';
 import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
 import { renderDiscordMarkdown } from './markdownRenderer.js';
@@ -32,9 +32,77 @@ function highlightMentions(content: string, message: Message, currentUser: User 
 	return result;
 }
 
+function getSystemMessageText(message: Message): string | null {
+	if (message.type === MessageType.UserJoin) {
+		const username = chalk.whiteBright(message.author?.username ?? 'Someone');
+		return `${chalk.hex('#43B581')('➕')} ${username} ${chalk.hex('#B9BBBE')('joined the server')}`;
+	}
+
+	return null;
+}
+
+function hasRenderableContent(message: Message): boolean {
+	const hasText = Boolean(message.content && message.content.trim().length > 0);
+	const hasAttachments = message.attachments?.size > 0;
+	const hasEmbeds = message.embeds?.length > 0;
+	const hasSystemMessage = Boolean(getSystemMessageText(message));
+	return hasText || hasAttachments || hasEmbeds || hasSystemMessage;
+}
+
+function toEmbedColor(color?: number): string {
+	return color ? `#${color.toString(16).padStart(6, '0')}` : '#4F545C';
+}
+
+function renderEmbedLine(ui: Pick<UIBridge, 'appendChat'>, prefix: string, text: string): void {
+	ui.appendChat(`${prefix} ${text}`);
+}
+
+function renderEmbedLines(ui: Pick<UIBridge, 'appendChat'>, prefix: string, content: string): void {
+	content.split('\n').forEach((line) => {
+		renderEmbedLine(ui, prefix, line);
+	});
+}
+
+function renderEmbed(embed: any, ui: Pick<UIBridge, 'appendChat'>): void {
+	const borderColor = toEmbedColor(embed.color);
+	const border = chalk.hex(borderColor)('┃');
+	const prefix = `${border} `;
+
+	renderEmbedLine(ui, prefix, chalk.hex('#4F545C').bold('Embed'));
+
+	if (embed.author?.name) {
+		const authorText = embed.author.url
+			? `${embed.author.name} ${chalk.underline(chalk.hex('#00AFF4')(embed.author.url))}`
+			: embed.author.name;
+		renderEmbedLine(ui, prefix, chalk.hex('#B9BBBE')(`by ${authorText}`));
+	}
+
+	if (embed.title) {
+		const titleText = embed.url
+			? `${chalk.bold(embed.title)} ${chalk.underline(chalk.hex('#00AFF4')(embed.url))}`
+			: chalk.bold(embed.title);
+		renderEmbedLine(ui, prefix, titleText);
+	}
+
+	if (embed.description) {
+		renderEmbedLines(ui, prefix, renderDiscordMarkdown(embed.description));
+	}
+
+	if (embed.fields?.length) {
+		embed.fields.forEach((field: any) => {
+			renderEmbedLine(ui, prefix, chalk.bold(field.name));
+			renderEmbedLines(ui, prefix, renderDiscordMarkdown(field.value));
+		});
+	}
+
+	if (embed.footer?.text) {
+		renderEmbedLine(ui, prefix, chalk.dim(embed.footer.text));
+	}
+}
+
 function getMessageStatus(message: Message): string {
 	const status: string[] = [];
-	if (!message.content && message.attachments.size === 0) {
+	if (!hasRenderableContent(message)) {
 		status.push(chalk.red('(message deleted)'));
 	}
 
@@ -56,11 +124,13 @@ export async function renderMessage(
 	const time = formatTime(message.createdTimestamp);
 	const author = formatAuthorLabel(message, currentUser);
 	const timestamp = chalk.gray(`[${time}]`);
+	const systemText = getSystemMessageText(message);
 	const timeDelta =
 		lastMessageTimestamp === null
 			? Number.POSITIVE_INFINITY
 			: message.createdTimestamp - lastMessageTimestamp;
 	const isGrouped =
+		!systemText &&
 		lastAuthorId === message.author.id
 		&& timeDelta >= 0
 		&& timeDelta <= GROUP_WINDOW_MS;
@@ -69,17 +139,28 @@ export async function renderMessage(
 		if (lastAuthorId !== null) {
 			ui.appendChat('');
 		}
-		ui.appendChat(`${timestamp} ${author}`);
+		if (!systemText) {
+			ui.appendChat(`${timestamp} ${author}`);
+		}
 	}
 
 	const messageStatus = getMessageStatus(message);
-	if(message.content){
+	if (message.content) {
 		const highlightedContent = highlightMentions(message.content, message, currentUser);
 		const rendered = renderDiscordMarkdown(highlightedContent);
 		ui.appendChat(`${rendered}${messageStatus}`);
+	} else {
+		if (systemText) {
+			ui.appendChat(`${timestamp} ${systemText}${messageStatus}`);
+		} else if (messageStatus) {
+			ui.appendChat(messageStatus.trim());
+		}
 	}
-	else if(messageStatus){
-		ui.appendChat(messageStatus.trim());
+
+	if (message.embeds?.length > 0) {
+		for (const embed of message.embeds) {
+			renderEmbed(embed, ui);
+		}
 	}
 
 	if(message.attachments?.size > 0){
