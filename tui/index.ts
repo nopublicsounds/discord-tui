@@ -27,6 +27,9 @@ if (launcherResult === 'setup') {
 	await runSetup();
 	clearInterval(keepAlive);
 	process.exit(0);
+} else if (launcherResult === 'exit') {
+	clearInterval(keepAlive);
+	process.exit(0);
 }
 
 const client = new Client({

@@ -4,7 +4,7 @@ import gradient from 'gradient-string';
 
 import { LOGO } from '../components/logo.js';
 
-export type LauncherResult = 'start' | 'setup';
+export type LauncherResult = 'start' | 'setup' | 'exit';
 
 function LauncherApp({ onDone }: { onDone: (result: LauncherResult) => void }) {
 	const { exit } = useApp();
@@ -13,7 +13,8 @@ function LauncherApp({ onDone }: { onDone: (result: LauncherResult) => void }) {
 
 	useInput((input, key) => {
 		if (key.ctrl && input === 'c') {
-			process.exit(0);
+			onDone('exit');
+			exit();
 		} else if (key.return) {
 			onDone('start');
 			exit();
@@ -64,6 +65,7 @@ export function showLauncher(): Promise<LauncherResult> {
 
 		void instance.waitUntilExit().then(() => {
 			instance.clear();
+			process.stdout.write('\x1b[2J\x1b[0;0H');
 			resolve(result);
 		});
 	});
