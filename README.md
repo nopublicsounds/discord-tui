@@ -6,8 +6,9 @@
 ### 1. Create Discord Bot
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Click "New Application"
-3. Go to "Bot" tab → "Reset Token" → Copy token
-4. Go to "Bot" tab → Enable "Presence Intent", "Server Members Intent" ,"Message Content Intent" (Privileged Gateway Intents)
+3. Go to the application settings and customize your bot profile (name, icon, description) before adding it to a server.
+4. Go to "Bot" tab → "Reset Token" → Copy token
+5. Go to "Bot" tab → Enable "Presence Intent", "Server Members Intent" ,"Message Content Intent" (Privileged Gateway Intents)
 
 ### 2. Install Dependencies
 [Install NodeJS](https://nodejs.org/en/download)
@@ -30,7 +31,15 @@ npm link
 discord-tui
 ```
 
+After running `npm link`, `discord-tui` becomes available globally. You can start it from any directory.
+
 The launcher screen will appear. Press `s` to enter setup and paste your Discord bot token.
+
+The setup process creates a `.env` file in the project root. It stores your bot token as:
+
+```env
+DISCORD_BOT_TOKEN=your-token-here
+```
 
 ## Known Limitation
 
