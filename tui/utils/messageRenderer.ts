@@ -63,40 +63,76 @@ function renderEmbedLines(ui: Pick<UIBridge, 'appendChat'>, prefix: string, cont
 	});
 }
 
-function renderEmbed(embed: any, ui: Pick<UIBridge, 'appendChat'>): void {
+async function renderEmbed(embed: any, ui: Pick<UIBridge, 'appendChat'>, showImages: boolean): Promise<void> {
 	const borderColor = toEmbedColor(embed.color);
 	const border = chalk.hex(borderColor)('┃');
 	const prefix = `${border} `;
+	let hasPreviousContent = false;
 
-	renderEmbedLine(ui, prefix, chalk.hex('#4F545C').bold('Embed'));
+	const addSpacing = () => {
+		if (hasPreviousContent) {
+			ui.appendChat(border);
+		}
+	};
 
 	if (embed.author?.name) {
 		const authorText = embed.author.url
 			? `${embed.author.name} ${chalk.underline(chalk.hex('#00AFF4')(embed.author.url))}`
 			: embed.author.name;
-		renderEmbedLine(ui, prefix, chalk.hex('#B9BBBE')(`by ${authorText}`));
+		renderEmbedLine(ui, prefix, chalk.hex('#B9BBBE').bold(authorText));
+		hasPreviousContent = true;
 	}
 
 	if (embed.title) {
+		addSpacing();
 		const titleText = embed.url
 			? `${chalk.bold(embed.title)} ${chalk.underline(chalk.hex('#00AFF4')(embed.url))}`
 			: chalk.bold(embed.title);
 		renderEmbedLine(ui, prefix, titleText);
+		hasPreviousContent = true;
+	}
+
+	if (showImages && embed.thumbnail?.url) {
+		addSpacing();
+		try {
+			const preview = await displayImage(embed.thumbnail.url);
+			if (preview) {
+				renderEmbedLines(ui, prefix, preview);
+				hasPreviousContent = true;
+			}
+		} catch (e) {}
 	}
 
 	if (embed.description) {
+		addSpacing();
 		renderEmbedLines(ui, prefix, renderDiscordMarkdown(embed.description));
+		hasPreviousContent = true;
 	}
 
 	if (embed.fields?.length) {
-		embed.fields.forEach((field: any) => {
+		for (const field of embed.fields) {
+			addSpacing();
 			renderEmbedLine(ui, prefix, chalk.bold(field.name));
 			renderEmbedLines(ui, prefix, renderDiscordMarkdown(field.value));
-		});
+			hasPreviousContent = true;
+		}
+	}
+
+	if (showImages && embed.image?.url) {
+		addSpacing();
+		try {
+			const preview = await displayImage(embed.image.url);
+			if (preview) {
+				renderEmbedLines(ui, prefix, preview);
+				hasPreviousContent = true;
+			}
+		} catch (e) {}
 	}
 
 	if (embed.footer?.text) {
+		addSpacing();
 		renderEmbedLine(ui, prefix, chalk.dim(embed.footer.text));
+		hasPreviousContent = true;
 	}
 }
 
@@ -159,7 +195,7 @@ export async function renderMessage(
 
 	if (message.embeds?.length > 0) {
 		for (const embed of message.embeds) {
-			renderEmbed(embed, ui);
+			await renderEmbed(embed, ui, showImages);
 		}
 	}
 
