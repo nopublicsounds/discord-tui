@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Message, MessageType, User } from 'discord.js';
+import { Embed, Message, MessageType, User } from 'discord.js';
 import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
 import { renderDiscordMarkdown } from './markdownRenderer.js';
@@ -49,8 +49,22 @@ function hasRenderableContent(message: Message): boolean {
 	return hasText || hasAttachments || hasEmbeds || hasSystemMessage;
 }
 
-function toEmbedColor(color?: number): string {
+function toEmbedColor(color: number | null | undefined): string {
 	return color ? `#${color.toString(16).padStart(6, '0')}` : '#4F545C';
+}
+
+function hasEmbedContent(embed: Embed, showImages: boolean): boolean {
+	return Boolean(
+		embed.title ||
+		embed.description ||
+		embed.author?.name ||
+		embed.fields?.length ||
+		embed.footer?.text ||
+		embed.timestamp ||
+		embed.provider?.name ||
+		embed.video?.url ||
+		(showImages && (embed.thumbnail?.url || embed.image?.url))
+	);
 }
 
 function renderEmbedLine(ui: Pick<UIBridge, 'appendChat'>, prefix: string, text: string): void {
@@ -63,11 +77,15 @@ function renderEmbedLines(ui: Pick<UIBridge, 'appendChat'>, prefix: string, cont
 	});
 }
 
-async function renderEmbed(embed: any, ui: Pick<UIBridge, 'appendChat'>, showImages: boolean): Promise<void> {
+async function renderEmbed(embed: Embed, ui: Pick<UIBridge, 'appendChat'>, showImages: boolean): Promise<void> {
+	if (!hasEmbedContent(embed, showImages)) return;
+
 	const borderColor = toEmbedColor(embed.color);
 	const border = chalk.hex(borderColor)('┃');
 	const prefix = `${border} `;
 	let hasPreviousContent = false;
+
+	ui.appendChat(chalk.hex(borderColor)('┏━━'));
 
 	const addSpacing = () => {
 		if (hasPreviousContent) {
@@ -75,7 +93,16 @@ async function renderEmbed(embed: any, ui: Pick<UIBridge, 'appendChat'>, showIma
 		}
 	};
 
+	if (embed.provider?.name) {
+		const providerText = embed.provider.url
+			? `${embed.provider.name} ${chalk.dim(embed.provider.url)}`
+			: embed.provider.name;
+		renderEmbedLine(ui, prefix, chalk.dim(providerText));
+		hasPreviousContent = true;
+	}
+
 	if (embed.author?.name) {
+		addSpacing();
 		const authorText = embed.author.url
 			? `${embed.author.name} ${chalk.underline(chalk.hex('#00AFF4')(embed.author.url))}`
 			: embed.author.name;
@@ -110,12 +137,30 @@ async function renderEmbed(embed: any, ui: Pick<UIBridge, 'appendChat'>, showIma
 	}
 
 	if (embed.fields?.length) {
+		const pending: typeof embed.fields[number][] = [];
+		const flushPending = () => {
+			for (const f of pending) {
+				addSpacing();
+				renderEmbedLine(ui, prefix, chalk.bold(f.name));
+				renderEmbedLines(ui, prefix, renderDiscordMarkdown(f.value));
+				hasPreviousContent = true;
+			}
+			pending.length = 0;
+		};
+
 		for (const field of embed.fields) {
-			addSpacing();
-			renderEmbedLine(ui, prefix, chalk.bold(field.name));
-			renderEmbedLines(ui, prefix, renderDiscordMarkdown(field.value));
-			hasPreviousContent = true;
+			if (field.inline) {
+				pending.push(field);
+				if (pending.length === 3) flushPending();
+			} else {
+				flushPending();
+				addSpacing();
+				renderEmbedLine(ui, prefix, chalk.bold(field.name));
+				renderEmbedLines(ui, prefix, renderDiscordMarkdown(field.value));
+				hasPreviousContent = true;
+			}
 		}
+		flushPending();
 	}
 
 	if (showImages && embed.image?.url) {
@@ -129,11 +174,22 @@ async function renderEmbed(embed: any, ui: Pick<UIBridge, 'appendChat'>, showIma
 		} catch (e) {}
 	}
 
-	if (embed.footer?.text) {
+	if (embed.video?.url) {
 		addSpacing();
-		renderEmbedLine(ui, prefix, chalk.dim(embed.footer.text));
+		renderEmbedLine(ui, prefix, `${chalk.hex('#B9BBBE')('Video:')} ${chalk.hex('#00AFF4').underline(embed.video.url)}`);
 		hasPreviousContent = true;
 	}
+
+	if (embed.footer?.text || embed.timestamp) {
+		addSpacing();
+		const footerParts: string[] = [];
+		if (embed.footer?.text) footerParts.push(embed.footer.text);
+		if (embed.timestamp) footerParts.push(formatTime(new Date(embed.timestamp).getTime()));
+		renderEmbedLine(ui, prefix, chalk.dim(footerParts.join(' • ')));
+		hasPreviousContent = true;
+	}
+
+	ui.appendChat(chalk.hex(borderColor)('┗━━'));
 }
 
 function getMessageStatus(message: Message): string {
