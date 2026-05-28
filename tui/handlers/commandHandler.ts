@@ -5,12 +5,13 @@ import { formatTime } from '../utils/formatters.js';
 import { renderMessage } from '../utils/messageRenderer.js';
 import { safeChannelName, safeGuildName } from '../utils/uiText.js';
 import { handleChannelSelect } from './channelHandler.js';
+import type { SelectableChannel } from '../utils/channelList.js';
 
 
 export interface CommandContext{
 	client: Client;
 	ui: UIBridge;
-	channelMap: Map<number, TextChannel>;
+	channelMap: Map<number, SelectableChannel>;
 	getCurrentChannel: () => TextChannel | null;
 	setCurrentChannel: (channel: TextChannel) => void;
 	getCurrentDMChannel: () => DMChannel | null;
@@ -72,6 +73,10 @@ const commands: Record<string, CommandHandler> = {
 		const candidates: Array<{ channel: TextChannel, index: number }> = [];
 
 		for(const [index, channel] of channelMap){
+			if (!(channel instanceof TextChannel)) {
+				continue;
+			}
+
 			if(channelName === channel.name){
 				if(serverName && !channel.guild.name.toLowerCase().includes(serverName.toLowerCase())){
 					continue;
