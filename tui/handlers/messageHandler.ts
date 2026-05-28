@@ -7,6 +7,7 @@ import type { PartialMessage } from 'discord.js';
 import type { UIBridge } from '../ui/types.js';
 import { renderMessage } from '../utils/messageRenderer.js';
 import { resolveMentionsForSend } from '../utils/mentionResolver.js';
+import type { SelectableChannel } from '../utils/channelList.js';
 
 const MENTION_INPUT_REGEX = /(?:^|\s)@([^\s@]*)$/;
 const MAX_MENTION_SUGGESTIONS = 6;
@@ -19,7 +20,7 @@ type MentionCandidate = {
 export function setupMessageHandlers(
 	client: Client,
 	ui: UIBridge,
-	channelMap: Map<number, TextChannel>,
+	channelMap: Map<number, SelectableChannel>,
 	getCurrentChannel: () => TextChannel | null,
 	setCurrentChannel: (channel: TextChannel) => void,
 	getCurrentDMChannel: () => DMChannel | null,

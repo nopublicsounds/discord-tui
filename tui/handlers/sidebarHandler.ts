@@ -1,8 +1,8 @@
 import { TextChannel } from 'discord.js';
 import type { UIBridge } from '../ui/types.js';
-import { safeChannelName } from '../utils/uiText.js';
+import type { SelectableChannel } from '../utils/channelList.js';
 
-function getNextSelectableIndex(currentIndex: number, totalItems: number, channelMap: Map<number, TextChannel>, step: 1 | -1): number {
+function getNextSelectableIndex(currentIndex: number, totalItems: number, channelMap: Map<number, SelectableChannel>, step: 1 | -1): number {
 	const selected = currentIndex;
 	let nextIndex = (selected + step + totalItems) % totalItems;
 
@@ -14,10 +14,10 @@ function getNextSelectableIndex(currentIndex: number, totalItems: number, channe
 }
 
 export function setupSidebarHandlers(
-	ui: Pick<UIBridge, 'onSidebarKey' | 'selectSidebar' | 'getSidebarSelectedIndex' | 'setInputLabel' | 'focusInput' | 'render'>,
-	channelMap: Map<number, TextChannel>,
+	ui: Pick<UIBridge, 'onSidebarKey' | 'selectSidebar' | 'getSidebarSelectedIndex' | 'focusInput' | 'render'>,
+	channelMap: Map<number, SelectableChannel>,
 	itemCount: number,
-	onChannelSelect: (channel: TextChannel) => Promise<void>
+	onChannelSelect: (channel: SelectableChannel) => Promise<void>
 ): void {
 	ui.onSidebarKey(['down'], () => {
 		const current = ui.getSidebarSelectedIndex();
@@ -38,7 +38,6 @@ export function setupSidebarHandlers(
 			return;
 		}
 
-		ui.setInputLabel(` # ${safeChannelName(channel.name)} `);
 		await onChannelSelect(channel);
 		setImmediate(() => {
 			ui.focusInput();
