@@ -1,11 +1,13 @@
 import chalk from 'chalk';
-import { ChannelType, Client, TextChannel } from 'discord.js';
+import { ChannelType, Client, TextChannel, VoiceChannel } from 'discord.js';
 import stringWidth from 'string-width';
 import { safeChannelName, safeGuildName } from './uiText.js';
 
+export type SelectableChannel = TextChannel | VoiceChannel;
+
 export type SidebarModel = {
 	items: string[];
-	channelMap: Map<number, TextChannel>;
+	channelMap: Map<number, SelectableChannel>;
 	firstChannelIndex: number | undefined;
 };
 
@@ -21,7 +23,7 @@ export function buildSidebarModel(
 	mentionChannels: Set<string> = new Set()
 ): SidebarModel {
 	const sidebarItems: string[] = [];
-	const channelMap = new Map<number, TextChannel>();
+	const channelMap = new Map<number, SelectableChannel>();
 	let itemIndex = 0;
 	const targetWidth = 20; // 고정 너비 설정
 
@@ -36,6 +38,7 @@ export function buildSidebarModel(
 		itemIndex++;
 
 		const textChannels = guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildText);
+		const voiceChannels = guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildVoice);
 		if (textChannels.size > 0) {
 			sidebarItems.push(padItem('   ▶ Textchannels'));
 			itemIndex++;
@@ -56,6 +59,22 @@ export function buildSidebarModel(
 					: `# ${safeChannelName(channel.name)}`;
 			sidebarItems.push(padItem(`   ${unreadMark} ${channelLabel}`));
 			channelMap.set(itemIndex, channel as TextChannel);
+			itemIndex++;
+		});
+
+		if (voiceChannels.size > 0) {
+			if (textChannels.size > 0) {
+				sidebarItems.push('');
+				itemIndex++;
+			}
+			sidebarItems.push(padItem('   ▶ Voicechannels'));
+			itemIndex++;
+		}
+
+		voiceChannels.forEach((channel) => {
+			const channelLabel = chalk.hex('#99AAB5')(`# ${safeChannelName(channel.name)}`);
+			sidebarItems.push(padItem(`     ${channelLabel}`));
+			channelMap.set(itemIndex, channel as VoiceChannel);
 			itemIndex++;
 		});
 
