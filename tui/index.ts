@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
-import { Client, DMChannel, GatewayIntentBits, Events, TextChannel } from 'discord.js';
+import { ChannelType, Client, DMChannel, GatewayIntentBits, Events, TextChannel } from 'discord.js';
 import { patchBlessedUnicode } from './utils/unicodePatch.js';
 import { setupKeyBindings } from './handlers/keyHandler.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
@@ -17,8 +17,10 @@ import { setupSidebarHandlers } from './handlers/sidebarHandler.js';
 import { runSetup } from './setup.js';
 import { createBlessedUIBridge } from './ui/blessedBridge.js';
 import { buildSidebarModel } from './utils/channelList.js';
+import type { SelectableChannel } from './utils/channelList.js';
 import { showLauncher } from './ui/launcher.js';
 import { clear } from 'console';
+import { safeChannelName, safeGuildName } from './utils/uiText.js';
 
 const launcherResult = await showLauncher();
 const keepAlive = setInterval(() => {}, 1000);
@@ -58,7 +60,7 @@ const ui = createBlessedUIBridge(screen);
 
 let currentChannel: TextChannel | null = null;
 let currentDMChannel: DMChannel | null = null;
-let channelMap = new Map<number, TextChannel>();
+let channelMap = new Map<number, SelectableChannel>();
 let unreadChannels = new Set<string>();
 let mentionChannels = new Set<string>();
 
@@ -109,9 +111,32 @@ client.once(Events.ClientReady, () => {
 	ui.setSidebarItems(model.items);
 
 	setupSidebarHandlers(ui, channelMap, model.items.length, async (channel) => {
-		currentChannel = channel;
-		markChannelAsRead(channel.id);
-		await handleChannelSelect(channel, ui, client.user);
+		if (channel.type === ChannelType.GuildText) {
+			currentChannel = channel;
+			currentDMChannel = null;
+			markChannelAsRead(channel.id);
+			await handleChannelSelect(channel, ui, client.user);
+			return;
+		}
+
+		currentChannel = null;
+		currentDMChannel = null;
+		const channelDisplayName = safeChannelName(channel.name);
+		const guildDisplayName = safeGuildName(channel.guild.name);
+
+		ui.showChatUI();
+		ui.clearChat();
+		ui.setChatContent('');
+		ui.clearInput();
+		ui.setChatLabel(` # ${channelDisplayName} `);
+		ui.setInputLabel(' Voice join coming soon ');
+		ui.setTitleBar(guildDisplayName, channelDisplayName, 'connected');
+		ui.setStatusBar(chalk.hex('#FAA61A')(`Voice channel selected: ${channelDisplayName} (join coming soon)`));
+		ui.appendChat('');
+		ui.appendChat(chalk.hex('#72767D')(`  Server: ${guildDisplayName}`));
+		ui.appendChat('');
+		ui.appendChat(chalk.hex('#FAA61A')('  Voice join is not implemented yet.'));
+		ui.render();
 	});
 
 	if(model.firstChannelIndex !== undefined){
