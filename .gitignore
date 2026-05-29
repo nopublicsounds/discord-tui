@@ -2,3 +2,4 @@
 .manifest
 node_modules/
 dist/
+downloads/
