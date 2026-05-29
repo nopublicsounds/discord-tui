@@ -11,7 +11,11 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	'focusInput' |
 	'getInputValue' |
 	'setInputBorderColor' |
-	'isMentionSuggestionsVisible'
+	'isMentionSuggestionsVisible' |
+	'isAttachmentModalVisible' |
+	'hideAttachmentModal' |
+	'scrollAttachmentModal' |
+	'getAttachmentModalHeight'
 >){
 	const scrollChat = (delta: number): void => {
 		ui.scrollChat(delta);
@@ -22,12 +26,63 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 		process.exit(0);
 	});
 
+	ui.onGlobalKey(['escape'], () => {
+		if (!ui.isAttachmentModalVisible()) {
+			return;
+		}
+		ui.hideAttachmentModal();
+		ui.render();
+	});
+
+	ui.onGlobalKey(['up'], () => {
+		if (!ui.isAttachmentModalVisible()) {
+			return;
+		}
+		ui.scrollAttachmentModal(-1);
+		ui.render();
+	});
+
+	ui.onGlobalKey(['down'], () => {
+		if (!ui.isAttachmentModalVisible()) {
+			return;
+		}
+		ui.scrollAttachmentModal(1);
+		ui.render();
+	});
+
+	ui.onGlobalKey(['pageup'], () => {
+		if (!ui.isAttachmentModalVisible()) {
+			return;
+		}
+		ui.scrollAttachmentModal(-ui.getAttachmentModalHeight());
+		ui.render();
+	});
+
+	ui.onGlobalKey(['pagedown'], () => {
+		if (!ui.isAttachmentModalVisible()) {
+			return;
+		}
+		ui.scrollAttachmentModal(ui.getAttachmentModalHeight());
+		ui.render();
+	});
+
+	ui.onInputKey(['escape'], () => {
+		if (!ui.isAttachmentModalVisible()) {
+			return;
+		}
+		ui.hideAttachmentModal();
+		ui.render();
+	});
+
 	ui.onSidebarKey(['C-d'], () => {
 		ui.focusInput();
 		ui.render();
 	});
 
 	ui.onInputKey(['up'], () => {
+		if (ui.isAttachmentModalVisible()) {
+			return;
+		}
 		if (ui.isMentionSuggestionsVisible()) {
 			return;
 		}
@@ -35,6 +90,9 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	});
 
 	ui.onInputKey(['down'], () => {
+		if (ui.isAttachmentModalVisible()) {
+			return;
+		}
 		if (ui.isMentionSuggestionsVisible()) {
 			return;
 		}
@@ -42,10 +100,16 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	});
 
 	ui.onInputKey(['pageup'], () => {
+		if (ui.isAttachmentModalVisible()) {
+			return;
+		}
 		scrollChat(-ui.getChatHeight());
 	});
 
 	ui.onInputKey(['pagedown'], () => {
+		if (ui.isAttachmentModalVisible()) {
+			return;
+		}
 		scrollChat(ui.getChatHeight());
 	});
 
