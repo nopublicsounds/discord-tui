@@ -3,6 +3,7 @@ import chalk from 'chalk';
 
 import { createChatBox } from '../components/chatbox.js';
 import { createInputBox } from '../components/inputbox.js';
+import { createAttachmentModal } from '../components/attachmentModal.js';
 import { createMentionBox } from '../components/mentionBox.js';
 import { createSidebar } from '../components/sidebar.js';
 import { createTitleBar, renderTitleBarContent } from '../components/titlebar.js';
@@ -13,6 +14,7 @@ export type AppLayout = {
 	chatBox: blessed.Widgets.Log;
 	inputBox: blessed.Widgets.TextboxElement;
 	mentionBox: blessed.Widgets.BoxElement;
+	attachmentModal: blessed.Widgets.BoxElement;
 	statusBar: blessed.Widgets.BoxElement;
 };
 
@@ -22,6 +24,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 	const chatBox = createChatBox(screen);
 	const inputBox = createInputBox(screen);
 	const mentionBox = createMentionBox(screen);
+	const attachmentModal = createAttachmentModal(screen);
 
 	// Status bar (bottom left, under sidebar)
 	const statusLabel = ' \u26a1  Status ';
@@ -44,7 +47,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		tags: false,
 	});
 
-	hideChatUI({ titleBar, sidebar, chatBox, inputBox, mentionBox, statusBar });
+	hideChatUI({ titleBar, sidebar, chatBox, inputBox, mentionBox, attachmentModal, statusBar });
 
 	return {
 		titleBar,
@@ -52,6 +55,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		chatBox,
 		inputBox,
 		mentionBox,
+		attachmentModal,
 		statusBar,
 	};
 }
@@ -62,6 +66,7 @@ export function showChatUI(layout: AppLayout): void {
 	layout.chatBox.show();
 	layout.inputBox.show();
 	layout.mentionBox.hide();
+	layout.attachmentModal.hide();
 	layout.statusBar.show();
 }
 
@@ -70,6 +75,7 @@ export function hideChatUI(layout: AppLayout): void {
 	layout.chatBox.hide();
 	layout.inputBox.hide();
 	layout.mentionBox.hide();
+	layout.attachmentModal.hide();
 	layout.statusBar.hide();
 }
 

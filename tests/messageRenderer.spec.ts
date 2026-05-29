@@ -3,6 +3,12 @@ import { MessageType } from 'discord.js';
 import { renderMessage } from '../tui/utils/messageRenderer.js';
 import type { UIBridge } from '../tui/ui/types.js';
 
+const attachmentActionsMock = vi.hoisted(() => ({
+  registerMessageAttachments: vi.fn(),
+}));
+
+vi.mock('../tui/utils/attachmentActions.js', () => attachmentActionsMock);
+
 vi.mock('../tui/utils/imageRenderer.js', () => ({
   displayImage: vi.fn(async () => null),
 }));
@@ -103,5 +109,26 @@ describe('messageRenderer', () => {
     await renderMessage(message, ui, true, null, null, null);
 
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('[Image preview unavailable in this terminal]'));
+  });
+
+  it('renders attachment summary lines and registers attachments', async () => {
+    const ui = createMockUI();
+    const message = {
+      id: 'm1',
+      createdTimestamp: 1672531200000,
+      author: { id: '1', username: 'Alice', bot: false },
+      content: 'files',
+      mentions: { users: new Map() },
+      embeds: [],
+      attachments: new Map([
+        ['a', { url: 'https://example.com/report.pdf', name: 'report.pdf', contentType: 'application/pdf', size: 2048 }],
+      ]),
+    } as any;
+
+    await renderMessage(message, ui, false, null, null, null);
+
+    expect(attachmentActionsMock.registerMessageAttachments).toHaveBeenCalledWith(message);
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('[Attachment #1] report.pdf'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('https://example.com/report.pdf'));
   });
 });

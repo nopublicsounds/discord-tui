@@ -100,6 +100,32 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 			return !layout.mentionBox.hidden;
 		},
 
+		showAttachmentModal(title: string, lines: string[]): void {
+			layout.attachmentModal.setLabel(` ${title} `);
+			layout.attachmentModal.setContent(lines.join('\n'));
+			layout.attachmentModal.setScroll(0);
+			layout.attachmentModal.show();
+			layout.attachmentModal.focus();
+		},
+
+		hideAttachmentModal(): void {
+			layout.attachmentModal.hide();
+			layout.attachmentModal.setContent('');
+			layout.inputBox.focus();
+		},
+
+		isAttachmentModalVisible(): boolean {
+			return !layout.attachmentModal.hidden;
+		},
+
+		scrollAttachmentModal(delta: number): void {
+			layout.attachmentModal.scroll(delta);
+		},
+
+		getAttachmentModalHeight(): number {
+			return layout.attachmentModal.height as number;
+		},
+
 		setSidebarItems(items: string[]): void {
 			layout.sidebar.setItems(items);
 		},

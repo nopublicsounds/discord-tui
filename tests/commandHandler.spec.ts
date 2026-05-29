@@ -1,5 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import { executeCommandByName, handleCommand, sendToDMChannel } from '../tui/handlers/commandHandler.js';
+import {
+  downloadRecentAttachmentForChannel,
+  listRecentAttachmentsForChannel,
+  openRecentAttachmentForChannel,
+} from '../tui/utils/attachmentActions.js';
+
+vi.mock('../tui/utils/attachmentActions.js', () => ({
+  listRecentAttachmentsForChannel: vi.fn(() => []),
+  openRecentAttachmentForChannel: vi.fn(async () => undefined),
+  downloadRecentAttachmentForChannel: vi.fn(async () => '/tmp/file.bin'),
+}));
 
 function createMockUI() {
   return {
@@ -9,6 +20,9 @@ function createMockUI() {
     setChatLabel: vi.fn(),
     setInputLabel: vi.fn(),
     selectSidebar: vi.fn(),
+    showAttachmentModal: vi.fn(),
+    hideAttachmentModal: vi.fn(),
+    isAttachmentModalVisible: vi.fn(() => false),
   };
 }
 
@@ -117,5 +131,76 @@ describe('commandHandler', () => {
 
     await sendToDMChannel(dmChannel, 'hello', ui as any, { user: { id: 'bot' } } as any);
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Failed to send')); 
+  });
+
+  it('lists recent attachments with /attachments', async () => {
+    vi.mocked(listRecentAttachmentsForChannel).mockReturnValue([
+      {
+        url: 'https://example.com/a.pdf',
+        name: 'a.pdf',
+        contentType: 'application/pdf',
+        size: 1024,
+        messageId: 'm1',
+        channelId: 'c1',
+        timestamp: 1,
+      },
+    ] as any);
+
+    const ui = createMockUI();
+    const ctx = {
+      client: { guilds: { cache: new Map() }, user: { id: 'bot' } },
+      ui,
+      channelMap: new Map(),
+      getCurrentChannel: () => ({ id: 'c1' }),
+      setCurrentChannel: vi.fn(),
+      getCurrentDMChannel: () => null,
+      setCurrentDMChannel: vi.fn(),
+      markChannelAsUnread: vi.fn(),
+    } as any;
+
+    const result = await executeCommandByName('attachments', [], ctx);
+    expect(result).toBe(true);
+    expect(ui.showAttachmentModal).toHaveBeenCalledWith(
+      expect.stringContaining('Attachments'),
+      expect.arrayContaining([expect.stringContaining('1. a.pdf')])
+    );
+  });
+
+  it('opens an attachment by index', async () => {
+    const ui = createMockUI();
+    const ctx = {
+      client: { guilds: { cache: new Map() }, user: { id: 'bot' } },
+      ui,
+      channelMap: new Map(),
+      getCurrentChannel: () => ({ id: 'c1' }),
+      setCurrentChannel: vi.fn(),
+      getCurrentDMChannel: () => null,
+      setCurrentDMChannel: vi.fn(),
+      markChannelAsUnread: vi.fn(),
+    } as any;
+
+    const result = await executeCommandByName('open', ['1'], ctx);
+    expect(result).toBe(true);
+    expect(openRecentAttachmentForChannel).toHaveBeenCalledWith('c1', 0);
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Opened attachment #1'));
+  });
+
+  it('downloads an attachment by index', async () => {
+    const ui = createMockUI();
+    const ctx = {
+      client: { guilds: { cache: new Map() }, user: { id: 'bot' } },
+      ui,
+      channelMap: new Map(),
+      getCurrentChannel: () => ({ id: 'c1' }),
+      setCurrentChannel: vi.fn(),
+      getCurrentDMChannel: () => null,
+      setCurrentDMChannel: vi.fn(),
+      markChannelAsUnread: vi.fn(),
+    } as any;
+
+    const result = await executeCommandByName('download', ['1', '/tmp', 'saved.bin'], ctx);
+    expect(result).toBe(true);
+    expect(downloadRecentAttachmentForChannel).toHaveBeenCalledWith('c1', 0, '/tmp saved.bin');
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Saved attachment to'));
   });
 });

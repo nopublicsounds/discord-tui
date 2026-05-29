@@ -3,6 +3,7 @@ import { Embed, Message, MessageType, User } from 'discord.js';
 import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
 import { renderDiscordMarkdown } from './markdownRenderer.js';
+import { registerMessageAttachments } from './attachmentActions.js';
 import type { UIBridge } from '../ui/types.js';
 
 const GROUP_WINDOW_MS = 3 * 60 * 1000;
@@ -205,6 +206,18 @@ function getMessageStatus(message: Message): string {
 	return status.length > 0 ? ' ' + status.join(' ') : '';
 }
 
+function formatAttachmentSize(size: number | null | undefined): string {
+	if (typeof size !== 'number') {
+		return 'unknown size';
+	}
+
+	if (size < 1024) {
+		return `${size} B`;
+	}
+
+	return `${(size / 1024).toFixed(1)} KB`;
+}
+
 export async function renderMessage(
 	message: Message, 
 	ui: Pick<UIBridge, 'appendChat'>,
@@ -256,7 +269,19 @@ export async function renderMessage(
 	}
 
 	if(message.attachments?.size > 0){
+		registerMessageAttachments(message);
+
+		let attachmentIndex = 1;
 		for(const attachment of message.attachments.values()){
+			const attachmentName = attachment.name ?? `attachment-${attachmentIndex}`;
+			const contentType = attachment.contentType ?? 'unknown type';
+			ui.appendChat(
+				chalk.hex('#B9BBBE')(
+					`[Attachment #${attachmentIndex}] ${attachmentName} (${contentType}, ${formatAttachmentSize(attachment.size)})`
+				)
+			);
+			ui.appendChat(chalk.hex('#00AFF4').underline(attachment.url));
+
 			if(showImages && attachment.contentType?.startsWith('image/')){
 				try{
 					const preview = await displayImage(attachment.url);
@@ -271,6 +296,8 @@ export async function renderMessage(
 					ui.appendChat(chalk.red('Failed to load image'));
 				}
 			}
+
+			attachmentIndex += 1;
 		}
 	}
 }

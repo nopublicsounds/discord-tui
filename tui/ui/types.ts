@@ -21,6 +21,11 @@ export interface UIBridge {
 	showMentionSuggestions(items: string[], selectedIndex: number): void;
 	hideMentionSuggestions(): void;
 	isMentionSuggestionsVisible(): boolean;
+	showAttachmentModal(title: string, lines: string[]): void;
+	hideAttachmentModal(): void;
+	isAttachmentModalVisible(): boolean;
+	scrollAttachmentModal(delta: number): void;
+	getAttachmentModalHeight(): number;
 
 	setSidebarItems(items: string[]): void;
 	selectSidebar(index: number): void;

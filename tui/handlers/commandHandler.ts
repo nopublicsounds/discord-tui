@@ -4,6 +4,11 @@ import type { UIBridge } from '../ui/types.js';
 import { formatTime } from '../utils/formatters.js';
 import { renderMessage } from '../utils/messageRenderer.js';
 import { safeChannelName, safeGuildName } from '../utils/uiText.js';
+import {
+	downloadRecentAttachmentForChannel,
+	listRecentAttachmentsForChannel,
+	openRecentAttachmentForChannel,
+} from '../utils/attachmentActions.js';
 import { handleChannelSelect } from './channelHandler.js';
 import type { SelectableChannel } from '../utils/channelList.js';
 
@@ -35,6 +40,9 @@ const commandDefinitions: CommandDefinition[] = [
 	{ name: 'dmopen', usage: '/dmopen <username>', description: 'open DM conversation with a user' },
 	{ name: 'dmclose', usage: '/dmclose', description: 'close DM and return to channel' },
 	{ name: 'dms', usage: '/dms', description: 'list open DM channels' },
+	{ name: 'attachments', usage: '/attachments', description: 'list recent attachments in current session' },
+	{ name: 'open', usage: '/open <number>', description: 'open attachment URL in browser' },
+	{ name: 'download', usage: '/download <number> [path]', description: 'download attachment to file path' },
 	{ name: 'quit', usage: '/quit', description: 'exit' }
 ];
 
@@ -251,6 +259,90 @@ const commands: Record<string, CommandHandler> = {
 		});
 		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
 		ui.appendChat('');
+		ui.render();
+	},
+
+	attachments: (_, { ui, getCurrentChannel, getCurrentDMChannel }) => {
+		const currentDMChannel = getCurrentDMChannel();
+		const currentChannel = getCurrentChannel();
+		const activeChannelId = currentDMChannel?.id ?? currentChannel?.id;
+		if (!activeChannelId) {
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ No channel selected'));
+			ui.render();
+			return;
+		}
+		const attachments = listRecentAttachmentsForChannel(activeChannelId);
+		const lines: string[] = [];
+
+		if (attachments.length === 0) {
+			lines.push('No attachments in this channel yet.');
+			lines.push('');
+			lines.push('Attachments appear after channel messages are rendered.');
+		} else {
+			for (const [index, attachment] of attachments.entries()) {
+				lines.push(`${index + 1}. ${attachment.name}`);
+				lines.push(`   ${attachment.contentType ?? 'unknown type'} • ${attachment.url}`);
+			}
+			lines.push('');
+			lines.push('Use /open <number> or /download <number> [path].');
+		}
+
+		ui.showAttachmentModal('Attachments', lines);
+		ui.render();
+	},
+
+	open: async (args, { ui, getCurrentChannel, getCurrentDMChannel }) => {
+		const target = Number.parseInt(args[0] ?? '', 10);
+		if (!Number.isInteger(target) || target < 1) {
+			ui.appendChat(chalk.hex('#FAA61A')('  Usage:') + chalk.hex('#B9BBBE')('  /open <number>'));
+			ui.render();
+			return;
+		}
+		const currentDMChannel = getCurrentDMChannel();
+		const currentChannel = getCurrentChannel();
+		const activeChannelId = currentDMChannel?.id ?? currentChannel?.id;
+		if (!activeChannelId) {
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ No channel selected'));
+			ui.render();
+			return;
+		}
+
+		try {
+			await openRecentAttachmentForChannel(activeChannelId, target - 1);
+			ui.appendChat(chalk.hex('#43B581')(`  Opened attachment #${target} in browser`));
+		}
+		catch (error) {
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ Failed to open attachment: ') + chalk.hex('#B9BBBE')((error as Error).message));
+		}
+		ui.render();
+	},
+
+	download: async (args, { ui, getCurrentChannel, getCurrentDMChannel }) => {
+		const target = Number.parseInt(args[0] ?? '', 10);
+		if (!Number.isInteger(target) || target < 1) {
+			ui.appendChat(chalk.hex('#FAA61A')('  Usage:') + chalk.hex('#B9BBBE')('  /download <number> [path]'));
+			ui.render();
+			return;
+		}
+		const currentDMChannel = getCurrentDMChannel();
+		const currentChannel = getCurrentChannel();
+		const activeChannelId = currentDMChannel?.id ?? currentChannel?.id;
+		if (!activeChannelId) {
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ No channel selected'));
+			ui.render();
+			return;
+		}
+
+		const outputPathArg = args.slice(1).join(' ').trim();
+		const outputPath = outputPathArg.length > 0 ? outputPathArg : undefined;
+
+		try {
+			const savedPath = await downloadRecentAttachmentForChannel(activeChannelId, target - 1, outputPath);
+			ui.appendChat(chalk.hex('#43B581')('  Saved attachment to: ') + chalk.hex('#B9BBBE')(savedPath));
+		}
+		catch (error) {
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ Failed to download attachment: ') + chalk.hex('#B9BBBE')((error as Error).message));
+		}
 		ui.render();
 	}
 };
