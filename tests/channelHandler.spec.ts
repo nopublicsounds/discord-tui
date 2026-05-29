@@ -1,11 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('../utils/messageRenderer.js', () => ({
+vi.mock('../tui/utils/messageRenderer.js', () => ({
   renderMessage: vi.fn(async () => undefined),
 }));
 
-import { handleChannelSelect } from '../handlers/channelHandler.js';
-import { renderMessage } from '../utils/messageRenderer.js';
+import { handleChannelSelect } from '../tui/handlers/channelHandler.js';
+import { renderMessage } from '../tui/utils/messageRenderer.js';
 
 describe('channelHandler', () => {
   let ui: any;

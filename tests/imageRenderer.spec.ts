@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { displayImage } from '../utils/imageRenderer.js';
+import { displayImage } from '../tui/utils/imageRenderer.js';
 
 const originalTermProgram = process.env.TERM_PROGRAM;
 const originalCodespaces = process.env.CODESPACES;

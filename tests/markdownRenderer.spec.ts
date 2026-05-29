@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderDiscordMarkdown } from '../utils/markdownRenderer.js';
+import { renderDiscordMarkdown } from '../tui/utils/markdownRenderer.js';
 
 describe('renderDiscordMarkdown', () => {
   it('renders bold, underline, spoiler, and links', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { resolveMentionsForSend } from '../utils/mentionResolver.js';
+import { resolveMentionsForSend } from '../tui/utils/mentionResolver.js';
 
 function makeMember(id: string, username: string, displayName: string, globalName: string) {
   return {

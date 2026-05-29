@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeUiText, safeChannelName, safeGuildName } from '../utils/uiText.js';
+import { sanitizeUiText, safeChannelName, safeGuildName } from '../tui/utils/uiText.js';
 
 describe('uiText utils', () => {
   it('removes emoji characters and trims whitespace', () => {

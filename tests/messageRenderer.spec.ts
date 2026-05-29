@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MessageType } from 'discord.js';
-import { renderMessage } from '../utils/messageRenderer.js';
-import type { UIBridge } from '../ui/types.js';
+import { renderMessage } from '../tui/utils/messageRenderer.js';
+import type { UIBridge } from '../tui/ui/types.js';
 
-vi.mock('../utils/imageRenderer.js', () => ({
+vi.mock('../tui/utils/imageRenderer.js', () => ({
   displayImage: vi.fn(async () => null),
 }));
 

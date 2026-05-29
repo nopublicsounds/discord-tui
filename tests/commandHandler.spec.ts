@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { executeCommandByName, handleCommand, sendToDMChannel } from '../handlers/commandHandler.js';
+import { executeCommandByName, handleCommand, sendToDMChannel } from '../tui/handlers/commandHandler.js';
 
 function createMockUI() {
   return {

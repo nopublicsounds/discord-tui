@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTime, formatDate, renderDateSeparator } from '../utils/formatters.js';
+import { formatTime, formatDate, renderDateSeparator } from '../tui/utils/formatters.js';
 
 function stripAnsi(text: string): string {
   return text.replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '');
