@@ -18,7 +18,7 @@ export function createMentionBox(screen: blessed.Widgets.Screen) {
 			}
 		},
 		label: {
-			text: ' @ Mention ',
+			text: ' Suggestions ',
 			side: 'left'
 		} as any,
 		tags: false,

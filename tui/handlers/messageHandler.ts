@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { handleCommand } from './commandHandler.js';
+import { handleCommand, getCommandDefinitions, getCommandSuggestions } from './commandHandler.js';
 import { handleChannelSelect } from './channelHandler.js';
 import { Client, DMChannel, Events, Message, TextChannel } from 'discord.js';
 import type { PartialMessage } from 'discord.js';
@@ -17,6 +17,11 @@ type MentionCandidate = {
 	insertValue: string;
 };
 
+type CommandCandidate = {
+	label: string;
+	insertValue: string;
+};
+
 export function setupMessageHandlers(
 	client: Client,
 	ui: UIBridge,
@@ -29,11 +34,24 @@ export function setupMessageHandlers(
 ) {
 	let mentionCandidates: MentionCandidate[] = [];
 	let selectedMentionIndex = 0;
+	let commandCandidates: CommandCandidate[] = [];
+	let selectedCommandIndex = 0;
+	let suppressNextSuggestionRefresh = false;
 
-	const resetMentionState = (): void => {
+	const resetMentionState = (hide: boolean = true): void => {
 		mentionCandidates = [];
 		selectedMentionIndex = 0;
-		ui.hideMentionSuggestions();
+		if (hide && commandCandidates.length === 0) {
+			ui.hideMentionSuggestions();
+		}
+	};
+
+	const resetCommandState = (hide: boolean = true): void => {
+		commandCandidates = [];
+		selectedCommandIndex = 0;
+		if (hide && mentionCandidates.length === 0) {
+			ui.hideMentionSuggestions();
+		}
 	};
 
 	const renderMentionCandidates = (): void => {
@@ -64,6 +82,50 @@ export function setupMessageHandlers(
 		return `${text.slice(0, tokenStart)}${selected.insertValue} ${text.slice(tokenEnd)}`;
 	};
 
+	const renderCommandCandidates = (): void => {
+		if (commandCandidates.length === 0) {
+			ui.hideMentionSuggestions();
+			return;
+		}
+
+		ui.showMentionSuggestions(
+			commandCandidates.map((candidate) => candidate.label),
+			selectedCommandIndex
+		);
+	};
+
+	const applySelectedCommandFromText = (): string | null => {
+		const selected = commandCandidates[selectedCommandIndex];
+		return selected?.insertValue ?? null;
+	};
+
+	const shouldApplyCommandSuggestionOnSubmit = (text: string): boolean => {
+		if (commandCandidates.length === 0) {
+			return false;
+		}
+
+		const trimmedEnd = text.trimEnd();
+		if (!trimmedEnd.startsWith('/')) {
+			return false;
+		}
+
+		const parsed = trimmedEnd.slice(1).trim();
+		if (!parsed) {
+			return true;
+		}
+
+		const hasTrailingSpace = /\s$/.test(text);
+		const tokens = parsed.split(/\s+/);
+		const commandName = (tokens[0] ?? '').toLowerCase();
+
+		if (tokens.length === 1 && !hasTrailingSpace) {
+			const exactCommand = getCommandDefinitions().some((definition) => definition.name === commandName);
+			return !exactCommand;
+		}
+
+		return true;
+	};
+
 	const resetInput = (): void => {
 		ui.clearInput();
 		resetMentionState();
@@ -75,6 +137,24 @@ export function setupMessageHandlers(
 
 	const updateMentionSuggestions = (): void => {
 		const inputValue = ui.getInputValue();
+		if (inputValue.startsWith('/')) {
+			resetMentionState(false);
+			const nextCommandCandidates = getCommandSuggestions(inputValue, commandCtx);
+			if (nextCommandCandidates.length === 0) {
+				resetCommandState();
+			}
+			else {
+				commandCandidates = nextCommandCandidates;
+				selectedCommandIndex = Math.min(selectedCommandIndex, commandCandidates.length - 1);
+				renderCommandCandidates();
+			}
+
+			ui.render();
+			return;
+		}
+
+		resetCommandState(false);
+
 		const mentionMatch = inputValue.match(MENTION_INPUT_REGEX);
 		if (!mentionMatch) {
 			resetMentionState();
@@ -255,9 +335,20 @@ export function setupMessageHandlers(
 	});
 
 	ui.onInputSubmit(async (text: string) => {
+		if (shouldApplyCommandSuggestionOnSubmit(text)) {
+			const nextValue = applySelectedCommandFromText();
+			resetCommandState();
+			suppressNextSuggestionRefresh = true;
+			ui.setInputValue(nextValue ?? text);
+			ui.focusInput();
+			ui.render();
+			return;
+		}
+
 		if (mentionCandidates.length > 0) {
 			const nextValue = applySelectedMentionFromText(text);
 			resetMentionState();
+			suppressNextSuggestionRefresh = true;
 			ui.setInputValue(nextValue ?? text);
 			ui.focusInput();
 			ui.render();
@@ -317,10 +408,47 @@ export function setupMessageHandlers(
 	});
 
 	ui.onInputKeypress(() => {
+		if (suppressNextSuggestionRefresh) {
+			suppressNextSuggestionRefresh = false;
+			return;
+		}
 		setImmediate(updateMentionSuggestions);
 	});
 
+	ui.onInputKey(['tab'], () => {
+		if (commandCandidates.length > 0) {
+			const nextValue = applySelectedCommandFromText();
+			resetCommandState();
+			suppressNextSuggestionRefresh = true;
+			if (nextValue) {
+				ui.setInputValue(nextValue);
+			}
+			ui.focusInput();
+			ui.render();
+			return;
+		}
+
+		if (mentionCandidates.length > 0) {
+			const currentValue = ui.getInputValue();
+			const nextValue = applySelectedMentionFromText(currentValue);
+			resetMentionState();
+			suppressNextSuggestionRefresh = true;
+			if (nextValue) {
+				ui.setInputValue(nextValue);
+			}
+			ui.focusInput();
+			ui.render();
+		}
+	});
+
 	ui.onInputKey(['up'], () => {
+		if (commandCandidates.length > 0) {
+			selectedCommandIndex = (selectedCommandIndex - 1 + commandCandidates.length) % commandCandidates.length;
+			renderCommandCandidates();
+			ui.render();
+			return;
+		}
+
 		if (mentionCandidates.length === 0) {
 			return;
 		}
@@ -331,6 +459,13 @@ export function setupMessageHandlers(
 	});
 
 	ui.onInputKey(['down'], () => {
+		if (commandCandidates.length > 0) {
+			selectedCommandIndex = (selectedCommandIndex + 1) % commandCandidates.length;
+			renderCommandCandidates();
+			ui.render();
+			return;
+		}
+
 		if (mentionCandidates.length === 0) {
 			return;
 		}

@@ -30,6 +30,11 @@ export interface CommandDefinition {
 	usage: string;
 }
 
+export interface CommandSuggestion {
+	label: string;
+	insertValue: string;
+}
+
 const dmChannelCache = new Map<string, DMChannel>();
 
 const commandDefinitions: CommandDefinition[] = [
@@ -38,6 +43,7 @@ const commandDefinitions: CommandDefinition[] = [
 	{ name: 'members', usage: '/members', description: 'show list of members' },
 	{ name: 'clear', usage: '/clear', description: 'clear chatbox' },
 	{ name: 'dmopen', usage: '/dmopen <username>', description: 'open DM conversation with a user' },
+	{ name: 'whois', usage: '/whois <username>', description: 'show user profile summary' },
 	{ name: 'dmclose', usage: '/dmclose', description: 'close DM and return to channel' },
 	{ name: 'dms', usage: '/dms', description: 'list open DM channels' },
 	{ name: 'attachments', usage: '/attachments', description: 'list recent attachments in current session' },
@@ -227,6 +233,43 @@ const commands: Record<string, CommandHandler> = {
 		ui.render();
 	},
 
+	whois: async (args, { client, ui }) => {
+		if(args.length < 1){
+			ui.appendChat(chalk.hex('#FAA61A')('  Usage:') + chalk.hex('#B9BBBE')('  /whois <username>'));
+			ui.render();
+			return;
+		}
+
+		const targetUsername = args[0] as string;
+		const targetUser = await findUserByUsername(client, targetUsername, ui);
+		if(!targetUser){
+			return;
+		}
+
+		const mutualGuilds: string[] = [];
+		for (const guild of client.guilds.cache.values()) {
+			if (guild.members.cache.has(targetUser.id)) {
+				mutualGuilds.push(safeGuildName(guild.name));
+			}
+		}
+
+		ui.appendChat('');
+		ui.appendChat(chalk.hex('#5865F2').bold(`  ✦ User — ${targetUser.username}`));
+		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
+		ui.appendChat(chalk.hex('#7289DA')('  ID: ') + chalk.hex('#B9BBBE')(targetUser.id));
+		if (targetUser.globalName) {
+			ui.appendChat(chalk.hex('#7289DA')('  Global Name: ') + chalk.hex('#B9BBBE')(targetUser.globalName));
+		}
+		ui.appendChat(chalk.hex('#7289DA')('  Created: ') + chalk.hex('#B9BBBE')(targetUser.createdAt.toLocaleString()));
+		ui.appendChat(chalk.hex('#7289DA')('  Mutual Servers: ') + chalk.hex('#B9BBBE')(String(mutualGuilds.length)));
+		if (mutualGuilds.length > 0) {
+			ui.appendChat(chalk.hex('#4F545C')(`  ${mutualGuilds.slice(0, 5).join(', ')}`));
+		}
+		ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(40)));
+		ui.appendChat('');
+		ui.render();
+	},
+
 	dmclose: (_, { ui, setCurrentDMChannel, getCurrentChannel }) => {
 		setCurrentDMChannel(null);
 		const currentChannel = getCurrentChannel();
@@ -349,6 +392,163 @@ const commands: Record<string, CommandHandler> = {
 
 export function getCommandDefinitions(): CommandDefinition[] {
 	return [...commandDefinitions];
+}
+
+function getActiveChannelId(ctx: CommandContext): string | null {
+	const currentDMChannel = ctx.getCurrentDMChannel();
+	const currentChannel = ctx.getCurrentChannel();
+	return currentDMChannel?.id ?? currentChannel?.id ?? null;
+}
+
+function getCommandContextWeight(commandName: string, inDM: boolean): number {
+	if (inDM) {
+		return ['dmclose', 'dms', 'attachments', 'open', 'download', 'whois'].includes(commandName) ? 5 : 0;
+	}
+
+	return ['goto', 'members', 'attachments', 'open', 'download', 'whois'].includes(commandName) ? 5 : 0;
+}
+
+function applyArgumentReplacement(tokens: string[], hasTrailingSpace: boolean, replacement: string): string {
+	if (hasTrailingSpace) {
+		return `/${tokens.join(' ')} ${replacement} `;
+	}
+
+	const head = tokens.slice(0, -1);
+	return `/${[...head, replacement].join(' ')} `;
+}
+
+function getCommandNameSuggestions(commandQuery: string, ctx: CommandContext): CommandSuggestion[] {
+	const normalizedQuery = commandQuery.toLowerCase();
+	const inDM = Boolean(ctx.getCurrentDMChannel());
+
+	return commandDefinitions
+		.map((definition) => {
+			const commandName = definition.name.toLowerCase();
+			let baseScore = 0;
+
+			if (!normalizedQuery) {
+				baseScore = 10;
+			}
+			else if (commandName === normalizedQuery) {
+				baseScore = 120;
+			}
+			else if (commandName.startsWith(normalizedQuery)) {
+				baseScore = 90;
+			}
+			else if (commandName.includes(normalizedQuery)) {
+				baseScore = 50;
+			}
+
+			return {
+				definition,
+				score: baseScore + getCommandContextWeight(commandName, inDM),
+			};
+		})
+		.filter((item) => item.score > 0)
+		.sort((a, b) => b.score - a.score || a.definition.name.localeCompare(b.definition.name))
+		.slice(0, 8)
+		.map((item) => ({
+			label: `/${item.definition.name}  ${item.definition.description}`,
+			insertValue: `/${item.definition.name} `,
+		}));
+}
+
+function getUsernameSuggestions(tokens: string[], hasTrailingSpace: boolean, currentArg: string, ctx: CommandContext): CommandSuggestion[] {
+	const query = currentArg.toLowerCase();
+	const usernames = new Set<string>();
+
+	for (const guild of ctx.client.guilds.cache.values()) {
+		for (const member of guild.members.cache.values()) {
+			usernames.add(member.user.username);
+		}
+	}
+
+	const suggestions = [...usernames]
+		.filter((username) => !query || username.toLowerCase().includes(query))
+		.sort((a, b) => a.localeCompare(b))
+		.slice(0, 8)
+		.map((username) => ({
+			label: username,
+			insertValue: applyArgumentReplacement(tokens, hasTrailingSpace, username),
+		}));
+
+	const exactMatch = !hasTrailingSpace && suggestions.some((item) => item.label.toLowerCase() === query);
+	return exactMatch ? [] : suggestions;
+}
+
+function getGotoSuggestions(tokens: string[], hasTrailingSpace: boolean, currentArg: string, ctx: CommandContext): CommandSuggestion[] {
+	const query = currentArg.replace(/^#/, '').toLowerCase();
+	const channels = [...ctx.channelMap.values()]
+		.filter((channel): channel is TextChannel => channel instanceof TextChannel)
+		.filter((channel) => !query || channel.name.toLowerCase().includes(query))
+		.slice(0, 8);
+
+	const suggestions = channels.map((channel) => ({
+		label: `#${safeChannelName(channel.name)} (${safeGuildName(channel.guild.name)})`,
+		insertValue: applyArgumentReplacement(tokens, hasTrailingSpace, `#${channel.name}`),
+	}));
+
+	const exactMatch = !hasTrailingSpace && channels.some((channel) => channel.name.toLowerCase() === query);
+	return exactMatch ? [] : suggestions;
+}
+
+function getAttachmentIndexSuggestions(tokens: string[], hasTrailingSpace: boolean, currentArg: string, ctx: CommandContext): CommandSuggestion[] {
+	const query = currentArg.toLowerCase();
+	const activeChannelId = getActiveChannelId(ctx);
+	if (!activeChannelId) {
+		return [];
+	}
+
+	const attachments = listRecentAttachmentsForChannel(activeChannelId);
+	const suggestions = attachments
+		.slice(0, 9)
+		.map((attachment, index) => ({
+			index: String(index + 1),
+			name: attachment.name,
+		}))
+		.filter((item) => !query || item.index.startsWith(query))
+		.map((item) => ({
+			label: `${item.index}. ${item.name}`,
+			insertValue: applyArgumentReplacement(tokens, hasTrailingSpace, item.index),
+		}));
+
+	const exactMatch = !hasTrailingSpace && suggestions.some((item) => item.label.startsWith(`${query}.`));
+	return exactMatch ? [] : suggestions;
+}
+
+export function getCommandSuggestions(input: string, ctx: CommandContext): CommandSuggestion[] {
+	if (!input.startsWith('/')) {
+		return [];
+	}
+
+	const withoutSlash = input.slice(1);
+	if (withoutSlash.trim().length === 0) {
+		return getCommandNameSuggestions('', ctx);
+	}
+
+	const hasTrailingSpace = /\s$/.test(withoutSlash);
+	const tokens = withoutSlash.trim().split(/\s+/);
+	const commandName = (tokens[0] ?? '').toLowerCase();
+
+	if (tokens.length === 1 && !hasTrailingSpace) {
+		return getCommandNameSuggestions(commandName, ctx);
+	}
+
+	const currentArg = hasTrailingSpace ? '' : (tokens[tokens.length - 1] ?? '');
+
+	if (commandName === 'goto') {
+		return getGotoSuggestions(tokens, hasTrailingSpace, currentArg, ctx);
+	}
+
+	if (commandName === 'dmopen' || commandName === 'whois') {
+		return getUsernameSuggestions(tokens, hasTrailingSpace, currentArg, ctx);
+	}
+
+	if (commandName === 'open' || commandName === 'download') {
+		return getAttachmentIndexSuggestions(tokens, hasTrailingSpace, currentArg, ctx);
+	}
+
+	return [];
 }
 
 export async function executeCommandByName(commandName: string, args: string[], ctx: CommandContext): Promise<boolean>{
