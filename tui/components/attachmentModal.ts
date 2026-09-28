@@ -30,9 +30,9 @@ export function createAttachmentModal(screen: blessed.Widgets.Screen) {
 		},
 		scrollable: true,
 		alwaysScroll: true,
-		keys: true,
+		keys: false,
 		mouse: true,
-		vi: true,
+		vi: false,
 		content: '',
 	});
 

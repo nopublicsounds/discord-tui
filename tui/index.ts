@@ -53,6 +53,7 @@ const screen = blessed.screen({
 	title: 'Discord TUI',
 	fullUnicode: true,
 	terminal: 'xterm-256color',
+	trueColor: true,
 	sendFocus: true
 });
 

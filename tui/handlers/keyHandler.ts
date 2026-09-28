@@ -4,16 +4,20 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	'onGlobalKey' |
 	'onSidebarKey' |
 	'onInputKey' |
+	'onAttachmentKey' |
+	'onExitConfirmationKey' |
 	'onInputKeypress' |
 	'getChatHeight' |
 	'scrollChat' |
 	'render' |
 	'focusInput' |
+	'focusSidebar' |
 	'getInputValue' |
 	'setInputBorderColor' |
 	'isMentionSuggestionsVisible' |
-	'isAttachmentModalVisible' |
 	'hideAttachmentModal' |
+	'showExitConfirmation' |
+	'hideExitConfirmation' |
 	'scrollAttachmentModal' |
 	'getAttachmentModalHeight'
 >, onExit?: () => void){
@@ -23,6 +27,16 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	};
 
 	ui.onGlobalKey(['C-c'], () => {
+		ui.showExitConfirmation();
+		ui.render();
+	});
+
+	ui.onInputKey(['C-c'], () => {
+		ui.showExitConfirmation();
+		ui.render();
+	});
+
+	ui.onExitConfirmationKey(['enter'], () => {
 		if (onExit) {
 			onExit();
 			return;
@@ -31,51 +45,33 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 		process.exit(0);
 	});
 
-	ui.onGlobalKey(['escape'], () => {
-		if (!ui.isAttachmentModalVisible()) {
-			return;
-		}
+	ui.onExitConfirmationKey(['escape'], () => {
+		ui.hideExitConfirmation();
+		ui.render();
+	});
+
+	ui.onAttachmentKey(['escape'], () => {
 		ui.hideAttachmentModal();
 		ui.render();
 	});
 
-	ui.onGlobalKey(['up'], () => {
-		if (!ui.isAttachmentModalVisible()) {
-			return;
-		}
+	ui.onAttachmentKey(['up'], () => {
 		ui.scrollAttachmentModal(-1);
 		ui.render();
 	});
 
-	ui.onGlobalKey(['down'], () => {
-		if (!ui.isAttachmentModalVisible()) {
-			return;
-		}
+	ui.onAttachmentKey(['down'], () => {
 		ui.scrollAttachmentModal(1);
 		ui.render();
 	});
 
-	ui.onGlobalKey(['pageup'], () => {
-		if (!ui.isAttachmentModalVisible()) {
-			return;
-		}
+	ui.onAttachmentKey(['pageup'], () => {
 		ui.scrollAttachmentModal(-ui.getAttachmentModalHeight());
 		ui.render();
 	});
 
-	ui.onGlobalKey(['pagedown'], () => {
-		if (!ui.isAttachmentModalVisible()) {
-			return;
-		}
+	ui.onAttachmentKey(['pagedown'], () => {
 		ui.scrollAttachmentModal(ui.getAttachmentModalHeight());
-		ui.render();
-	});
-
-	ui.onInputKey(['escape'], () => {
-		if (!ui.isAttachmentModalVisible()) {
-			return;
-		}
-		ui.hideAttachmentModal();
 		ui.render();
 	});
 
@@ -84,10 +80,12 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 		ui.render();
 	});
 
+	ui.onInputKey(['C-d'], () => {
+		ui.focusSidebar();
+		ui.render();
+	});
+
 	ui.onInputKey(['up'], () => {
-		if (ui.isAttachmentModalVisible()) {
-			return;
-		}
 		if (ui.isMentionSuggestionsVisible()) {
 			return;
 		}
@@ -95,9 +93,6 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	});
 
 	ui.onInputKey(['down'], () => {
-		if (ui.isAttachmentModalVisible()) {
-			return;
-		}
 		if (ui.isMentionSuggestionsVisible()) {
 			return;
 		}
@@ -105,16 +100,10 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	});
 
 	ui.onInputKey(['pageup'], () => {
-		if (ui.isAttachmentModalVisible()) {
-			return;
-		}
 		scrollChat(-ui.getChatHeight());
 	});
 
 	ui.onInputKey(['pagedown'], () => {
-		if (ui.isAttachmentModalVisible()) {
-			return;
-		}
 		scrollChat(ui.getChatHeight());
 	});
 
