@@ -25,14 +25,8 @@ export function createInputBox(screen: blessed.Widgets.Screen){
 			}
 		},
 		keys: true,
-		inputOnFocus: true
+		inputOnFocus: false
 	});
 
-	inputBox.on('keypress', (ch, key) => {
-		if (key.ctrl && key.name === 'd'){
-			inputBox.cancel();
-			return false;
-		}
-	});
 	return inputBox;
 }

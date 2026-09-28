@@ -1,11 +1,13 @@
 import type blessed from 'blessed';
 import chalk from 'chalk';
 
+import { createBlessedInteractionController } from './interactions.js';
 import { createAppLayout, hideChatUI, renderTitleBarContent, showChatUI } from './layout.js';
 import type { KeyHandler, UIBridge } from './types.js';
 
 export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge {
 	const layout = createAppLayout(screen);
+	const interactions = createBlessedInteractionController(layout);
 
 	const safeAsync = (handler: KeyHandler): (() => void) => {
 		return () => {
@@ -65,11 +67,11 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 		},
 
 		focusInput(): void {
-			layout.inputBox.focus();
+			interactions.focusInput();
 		},
 
 		focusSidebar(): void {
-			layout.sidebar.focus();
+			interactions.focusSidebar();
 		},
 
 		setInputLabel(label: string): void {
@@ -105,17 +107,27 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 			layout.attachmentModal.setContent(lines.join('\n'));
 			layout.attachmentModal.setScroll(0);
 			layout.attachmentModal.show();
-			layout.attachmentModal.focus();
+			interactions.focusAttachment();
 		},
 
 		hideAttachmentModal(): void {
 			layout.attachmentModal.hide();
 			layout.attachmentModal.setContent('');
-			layout.inputBox.focus();
+			interactions.restoreFocusAfterAttachment();
 		},
 
 		isAttachmentModalVisible(): boolean {
 			return !layout.attachmentModal.hidden;
+		},
+
+		showExitConfirmation(): void {
+			layout.exitConfirmModal.show();
+			interactions.focusExitConfirmation();
+		},
+
+		hideExitConfirmation(): void {
+			layout.exitConfirmModal.hide();
+			interactions.restoreFocusAfterExitConfirmation();
 		},
 
 		scrollAttachmentModal(delta: number): void {
@@ -159,11 +171,19 @@ export function createBlessedUIBridge(screen: blessed.Widgets.Screen): UIBridge 
 		},
 
 		onSidebarKey(keys: string[], handler: KeyHandler): void {
-			layout.sidebar.key(keys, safeAsync(handler));
+			interactions.onSidebarKey(keys, handler);
 		},
 
 		onInputKey(keys: string[], handler: KeyHandler): void {
-			layout.inputBox.key(keys, safeAsync(handler));
+			interactions.onInputKey(keys, handler);
+		},
+
+		onAttachmentKey(keys: string[], handler: KeyHandler): void {
+			interactions.onAttachmentKey(keys, handler);
+		},
+
+		onExitConfirmationKey(keys: string[], handler: KeyHandler): void {
+			interactions.onExitConfirmationKey(keys, handler);
 		},
 
 		onInputSubmit(handler: (value: string) => void | Promise<void>): void {

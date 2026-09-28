@@ -24,6 +24,8 @@ export interface UIBridge {
 	showAttachmentModal(title: string, lines: string[]): void;
 	hideAttachmentModal(): void;
 	isAttachmentModalVisible(): boolean;
+	showExitConfirmation(): void;
+	hideExitConfirmation(): void;
 	scrollAttachmentModal(delta: number): void;
 	getAttachmentModalHeight(): number;
 
@@ -40,6 +42,8 @@ export interface UIBridge {
 	onGlobalKey(keys: string[], handler: KeyHandler): void;
 	onSidebarKey(keys: string[], handler: KeyHandler): void;
 	onInputKey(keys: string[], handler: KeyHandler): void;
+	onAttachmentKey(keys: string[], handler: KeyHandler): void;
+	onExitConfirmationKey(keys: string[], handler: KeyHandler): void;
 	onInputSubmit(handler: (value: string) => void | Promise<void>): void;
 	onInputKeypress(handler: (ch: string) => void): void;
 }

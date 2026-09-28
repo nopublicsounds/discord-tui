@@ -148,9 +148,12 @@ export function setupMessageHandlers(
 		return true;
 	};
 
-	const resetInput = (): void => {
+	const resetInput = (restoreFocus = true): void => {
 		ui.clearInput();
 		resetMentionState();
+		if (!restoreFocus) {
+			return;
+		}
 		setImmediate(() => {
 			ui.focusInput();
 			ui.render();
@@ -398,7 +401,7 @@ export function setupMessageHandlers(
 		}
 
 		if (await handleCommand(message, commandCtx)) {
-			resetInput();
+			resetInput(!ui.isAttachmentModalVisible());
 			return;
 		}
 

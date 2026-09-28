@@ -3,17 +3,15 @@
   "type": "module",
   "dependencies": {
     "@discordjs/voice": "^0.19.2",
-    "blessed": "^0.1.81",
+    "blessed": "git+https://github.com/nopublicsounds/blessed.git",
     "chalk": "^5.6.2",
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.4",
     "got": "^14.6.6",
     "gradient-string": "^3.0.0",
-    "ink": "^7.0.1",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",
     "node-pty": "^1.1.0",
-    "react": "^19.2.5",
     "string-width": "^8.2.0",
     "terminal-image": "^4.2.0",
     "typescript": "^5.9.3"
@@ -33,7 +31,6 @@
     "@types/gradient-string": "^1.1.6",
     "@types/marked-terminal": "^6.1.1",
     "@types/node": "^25.2.3",
-    "@types/react": "^19.2.14",
     "tsx": "^4.21.0",
     "vitest": "^1.5.10"
   },

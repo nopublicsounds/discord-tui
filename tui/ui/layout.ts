@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import { createChatBox } from '../components/chatbox.js';
 import { createInputBox } from '../components/inputbox.js';
 import { createAttachmentModal } from '../components/attachmentModal.js';
+import { createExitConfirmModal } from '../components/exitConfirmModal.js';
 import { createMentionBox } from '../components/mentionBox.js';
 import { createSidebar } from '../components/sidebar.js';
 import { createTitleBar, renderTitleBarContent } from '../components/titlebar.js';
@@ -15,6 +16,7 @@ export type AppLayout = {
 	inputBox: blessed.Widgets.TextboxElement;
 	mentionBox: blessed.Widgets.BoxElement;
 	attachmentModal: blessed.Widgets.BoxElement;
+	exitConfirmModal: blessed.Widgets.BoxElement;
 	statusBar: blessed.Widgets.BoxElement;
 };
 
@@ -25,6 +27,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 	const inputBox = createInputBox(screen);
 	const mentionBox = createMentionBox(screen);
 	const attachmentModal = createAttachmentModal(screen);
+	const exitConfirmModal = createExitConfirmModal(screen);
 
 	// Status bar (bottom left, under sidebar)
 	const statusLabel = ' \u26a1  Status ';
@@ -47,7 +50,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		tags: false,
 	});
 
-	hideChatUI({ titleBar, sidebar, chatBox, inputBox, mentionBox, attachmentModal, statusBar });
+	hideChatUI({ titleBar, sidebar, chatBox, inputBox, mentionBox, attachmentModal, exitConfirmModal, statusBar });
 
 	return {
 		titleBar,
@@ -56,6 +59,7 @@ export function createAppLayout(screen: blessed.Widgets.Screen): AppLayout {
 		inputBox,
 		mentionBox,
 		attachmentModal,
+		exitConfirmModal,
 		statusBar,
 	};
 }
@@ -67,6 +71,7 @@ export function showChatUI(layout: AppLayout): void {
 	layout.inputBox.show();
 	layout.mentionBox.hide();
 	layout.attachmentModal.hide();
+	layout.exitConfirmModal.hide();
 	layout.statusBar.show();
 }
 
@@ -76,6 +81,7 @@ export function hideChatUI(layout: AppLayout): void {
 	layout.inputBox.hide();
 	layout.mentionBox.hide();
 	layout.attachmentModal.hide();
+	layout.exitConfirmModal.hide();
 	layout.statusBar.hide();
 }
 
