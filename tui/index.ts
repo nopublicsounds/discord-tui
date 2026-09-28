@@ -10,7 +10,6 @@ dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env'), quiet: true }
 
 import { ChannelType, Client, DMChannel, GatewayIntentBits, Events, TextChannel, VoiceChannel } from 'discord.js';
 import { entersState, joinVoiceChannel, VoiceConnectionStatus, type VoiceConnection } from '@discordjs/voice';
-import { patchBlessedUnicode } from './utils/unicodePatch.js';
 import { setupKeyBindings } from './handlers/keyHandler.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
 import { handleChannelSelect, handleVoiceChannelSelect } from './handlers/channelHandler.js';
@@ -45,8 +44,6 @@ const client = new Client({
 		GatewayIntentBits.DirectMessageTyping,
 	]
 });
-
-patchBlessedUnicode();
 
 const screen = blessed.screen({
 	smartCSR: true,
